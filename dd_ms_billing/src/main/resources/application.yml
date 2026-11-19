@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: dd-ms-billing       # guiones: es el nombre en Consul
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  config:
+    import: "optional:consul:"
+
+  # Postgres puede no aceptar conexiones aun cuando arranca el servicio (compose,
+  # Railway, reinicio del servidor): Flyway reintenta en vez de tumbar el arranque.
+  flyway:
+    connect-retries: 12
+    connect-retries-interval: 5s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# Proveedores externos, aun sin contratar. "none" = facturas sin emitir ante la
+# DIAN (einvoice_status NOT_ISSUED) y webhook de pagos cerrado (503). Para
+# conectar uno, se implementa ElectronicInvoiceProvider / PaymentGateway con
+# @ConditionalOnProperty sobre estas claves y se cambia el valor aqui o por env
+# (BILLING_EINVOICE_PROVIDER / BILLING_PAYMENTS_PROVIDER).
+billing:
+  einvoice:
+    provider: none
+  payments:
+    provider: none

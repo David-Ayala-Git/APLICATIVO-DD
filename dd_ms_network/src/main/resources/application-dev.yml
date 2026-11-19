@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ddconexiones
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:devpass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: network
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    schemas: network
+    default-schema: network
+    locations: classpath:db/migration
+
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: 8500
+      discovery:
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+server:
+  port: 8084
+
+network:
+  crypto:
+    secret: ${NETWORK_CRYPTO_SECRET:dev-network-crypto-secret-not-for-production-1234567890}

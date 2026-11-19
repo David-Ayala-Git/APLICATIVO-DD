@@ -1,0 +1,28 @@
+spring:
+  cloud:
+    consul:
+      host: ${CONSUL_HOST}
+      port: ${CONSUL_PORT:8500}
+      config:
+        watch:
+          enabled: false
+      discovery:
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+server:
+  # Render inyecta PORT; en docker compose no existe y se usa SERVER_PORT
+  port: ${PORT:${SERVER_PORT:8080}}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}

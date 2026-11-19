@@ -1,0 +1,28 @@
+spring:
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: 8500
+      config:
+        watch:
+          enabled: false
+      discovery:
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+server:
+  port: 8080
+
+security:
+  jwt:
+    # Debe ser exactamente el mismo secreto que usa dd_ms_auth para firmar el JWT.
+    secret: ${JWT_SECRET:dev-secret-key-ddconexiones-not-for-production-use-only-1234567890}

@@ -1,0 +1,33 @@
+# Perfil para Render (SPRING_PROFILES_ACTIVE=pdn,render). Render no tiene Consul:
+# se apaga y los nombres de servicio (lb://dd-ms-crm, http://dd-ms-crm con
+# @LoadBalanced) se resuelven con el SimpleDiscoveryClient de Spring Cloud hacia
+# las direcciones de la red privada de Render (variables *_HOSTPORT de render.yaml).
+# OJO: SPRING_CLOUD_CONSUL_ENABLED=false tambien va como variable de entorno,
+# porque el import "optional:consul:" se evalua antes de leer este archivo.
+spring:
+  cloud:
+    consul:
+      enabled: false
+      config:
+        enabled: false
+      discovery:
+        enabled: false
+        register: false
+    discovery:
+      client:
+        simple:
+          instances:
+            "[dd-ms-auth]":
+              - uri: http://${AUTH_HOSTPORT:dd-ms-auth:8081}
+            "[dd-ms-crm]":
+              - uri: http://${CRM_HOSTPORT:dd-ms-crm:8082}
+            "[dd-ms-billing]":
+              - uri: http://${BILLING_HOSTPORT:dd-ms-billing:8083}
+            "[dd-ms-network]":
+              - uri: http://${NETWORK_HOSTPORT:dd-ms-network:8084}
+            "[dd-ms-support]":
+              - uri: http://${SUPPORT_HOSTPORT:dd-ms-support:8085}
+            "[dd-ms-comms]":
+              - uri: http://${COMMS_HOSTPORT:dd-ms-comms:8086}
+            "[dd-ms-reports]":
+              - uri: http://${REPORTS_HOSTPORT:dd-ms-reports:8087}

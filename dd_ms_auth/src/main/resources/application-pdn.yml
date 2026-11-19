@@ -1,0 +1,48 @@
+spring:
+  datasource:
+    # DB_URL completa (Supabase: incluye ?sslmode=require); si falta, se arma con DB_HOST
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:ddconexiones}}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    # El pooler de Supabase limita las conexiones: en Render se baja con DB_POOL_SIZE
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    schemas: auth
+    default-schema: auth
+    locations: classpath:db/migration
+
+  cloud:
+    consul:
+      host: ${CONSUL_HOST}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+server:
+  # Render inyecta PORT; en docker compose no existe y se usa SERVER_PORT
+  port: ${PORT:${SERVER_PORT:8081}}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+  # Ver SeedAdminGuard: sin SUPER_ADMIN_PASSWORD, el servicio no arranca mientras
+  # el admin de V2__seed_admin.sql conserve su contrasena publicada en el repo.
+  bootstrap:
+    require-rotation: true
+    super-admin-password: ${SUPER_ADMIN_PASSWORD:}

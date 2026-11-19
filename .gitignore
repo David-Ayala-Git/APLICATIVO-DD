@@ -1,0 +1,22 @@
+# Secretos: nunca al repositorio (usa .env.example como plantilla)
+.env
+.env.*
+!.env.example
+
+# Salidas de build y dependencias
+**/build/
+**/.gradle/
+**/out/
+**/node_modules/
+**/dist/
+**/.angular/
+
+# IDE
+**/.idea/
+**/.vscode/
+*.iml
+
+backups/
+
+# Proyecto aparte, no se despliega con este monorepo
+sp-ms-streaming-pricing/

@@ -1,5 +1,0 @@
-dd.conexiones.mscommon.tenant.TenantAutoConfiguration
-dd.conexiones.mscommon.module.ModuleAutoConfiguration
-dd.conexiones.mscommon.audit.AuditAutoConfiguration
-dd.conexiones.mscommon.role.RoleAutoConfiguration
-dd.conexiones.mscommon.automation.AutomationAutoConfiguration

@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ddconexiones
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:devpass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    schemas: auth
+    default-schema: auth
+    locations: classpath:db/migration
+
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: 8500
+      discovery:
+        register: true
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+server:
+  port: 8081
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key-ddconexiones-not-for-production-use-only-1234567890}
+    expiration-seconds: 3600
+  # Ver SeedAdminGuard: en dev solo advierte; con SUPER_ADMIN_PASSWORD tambien rota.
+  bootstrap:
+    super-admin-password: ${SUPER_ADMIN_PASSWORD:}

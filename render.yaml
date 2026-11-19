@@ -1,0 +1,220 @@
+# Blueprint de Render: New > Blueprint > repo APLICATIVO-DD (rama main).
+# Solo el gateway es publico; los demas son servicios privados (pserv) que se
+# hablan por la red privada de Render. Base de datos: Supabase
+# (infra/supabase/README.md). Las variables con "sync: false" se piden en el
+# panel al crear el Blueprint.
+
+envVarGroups:
+  - name: dd-shared
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: pdn,render
+      # Deben ir como variables (no solo en application-render.yml): el import
+      # "optional:consul:" se evalua antes de leer los perfiles.
+      - key: SPRING_CLOUD_CONSUL_ENABLED
+        value: "false"
+      - key: SPRING_CLOUD_CONSUL_CONFIG_ENABLED
+        value: "false"
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75
+      # 7 servicios x 2 = 14 conexiones: cabe en el pool de 15 del plan gratis de Supabase
+      - key: DB_POOL_SIZE
+        value: "2"
+
+services:
+  - type: web
+    name: dd-ms-gateway
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_gateway/Dockerfile
+    dockerContext: ./dd_ms_gateway   # no usa ms-common
+    buildFilter:
+      paths: [ "dd_ms_gateway/**" ]
+    healthCheckPath: /actuator/health
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8080"
+      - key: JWT_SECRET               # el MISMO valor que en dd-ms-auth (64+ caracteres)
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS     # solo pesa si el front llama directo, sin el rewrite de vercel.json
+        value: https://*.vercel.app
+      - key: AUTH_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-auth, property: hostport }
+      - key: CRM_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+      - key: BILLING_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-billing, property: hostport }
+      - key: NETWORK_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-network, property: hostport }
+      - key: SUPPORT_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-support, property: hostport }
+      - key: COMMS_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-comms, property: hostport }
+      - key: REPORTS_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-reports, property: hostport }
+
+  - type: pserv
+    name: dd-ms-auth
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_auth/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_auth/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8081"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET         # el MISMO valor que en dd-ms-gateway
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD   # 12+ caracteres; obligatorio en el primer arranque
+        sync: false
+
+  - type: pserv
+    name: dd-ms-crm
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_crm/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_crm/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8082"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+  - type: pserv
+    name: dd-ms-billing
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_billing/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_billing/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8083"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: CRM_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+
+  - type: pserv
+    name: dd-ms-network
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_network/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_network/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8084"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: NETWORK_CRYPTO_SECRET
+        sync: false
+
+  - type: pserv
+    name: dd-ms-support
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_support/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_support/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8085"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+  - type: pserv
+    name: dd-ms-comms
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_comms/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_comms/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8086"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: CRM_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+      - key: SUPPORT_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-support, property: hostport }
+      - key: BILLING_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-billing, property: hostport }
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false
+
+  - type: pserv
+    name: dd-ms-reports
+    runtime: docker
+    region: virginia
+    plan: starter
+    dockerfilePath: ./dd_ms_reports/Dockerfile
+    dockerContext: .            # raiz: el Dockerfile necesita ms-common
+    buildFilter:
+      paths: [ "dd_ms_reports/**", "ms-common/**" ]
+    envVars:
+      - fromGroup: dd-shared
+      - key: PORT
+        value: "8087"
+      - key: DB_URL             # jdbc:postgresql://<pooler>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: CRM_HOSTPORT
+        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
