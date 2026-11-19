@@ -1,6 +1,6 @@
 # Blueprint de Render: New > Blueprint > repo APLICATIVO-DD (rama main).
-# Solo el gateway es publico; los demas son servicios privados (pserv) que se
-# hablan por la red privada de Render. Base de datos: Supabase
+# Cada microservicio es un Web Service (Docker). Entre ellos se llaman por la
+# red privada de Render (variables *_HOSTPORT). Base de datos: Supabase
 # (infra/supabase/README.md). Las variables con "sync: false" se piden en el
 # panel al crear el Blueprint.
 
@@ -41,21 +41,21 @@ services:
       - key: CORS_ALLOWED_ORIGINS     # solo pesa si el front llama directo, sin el rewrite de vercel.json
         value: https://*.vercel.app
       - key: AUTH_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-auth, property: hostport }
+        fromService: { type: web, name: dd-ms-auth, property: hostport }
       - key: CRM_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+        fromService: { type: web, name: dd-ms-crm, property: hostport }
       - key: BILLING_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-billing, property: hostport }
+        fromService: { type: web, name: dd-ms-billing, property: hostport }
       - key: NETWORK_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-network, property: hostport }
+        fromService: { type: web, name: dd-ms-network, property: hostport }
       - key: SUPPORT_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-support, property: hostport }
+        fromService: { type: web, name: dd-ms-support, property: hostport }
       - key: COMMS_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-comms, property: hostport }
+        fromService: { type: web, name: dd-ms-comms, property: hostport }
       - key: REPORTS_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-reports, property: hostport }
+        fromService: { type: web, name: dd-ms-reports, property: hostport }
 
-  - type: pserv
+  - type: web
     name: dd-ms-auth
     runtime: docker
     region: virginia
@@ -79,7 +79,7 @@ services:
       - key: SUPER_ADMIN_PASSWORD   # 12+ caracteres; obligatorio en el primer arranque
         sync: false
 
-  - type: pserv
+  - type: web
     name: dd-ms-crm
     runtime: docker
     region: virginia
@@ -99,7 +99,7 @@ services:
       - key: DB_PASSWORD
         sync: false
 
-  - type: pserv
+  - type: web
     name: dd-ms-billing
     runtime: docker
     region: virginia
@@ -119,9 +119,9 @@ services:
       - key: DB_PASSWORD
         sync: false
       - key: CRM_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+        fromService: { type: web, name: dd-ms-crm, property: hostport }
 
-  - type: pserv
+  - type: web
     name: dd-ms-network
     runtime: docker
     region: virginia
@@ -143,7 +143,7 @@ services:
       - key: NETWORK_CRYPTO_SECRET
         sync: false
 
-  - type: pserv
+  - type: web
     name: dd-ms-support
     runtime: docker
     region: virginia
@@ -163,7 +163,7 @@ services:
       - key: DB_PASSWORD
         sync: false
 
-  - type: pserv
+  - type: web
     name: dd-ms-comms
     runtime: docker
     region: virginia
@@ -183,11 +183,11 @@ services:
       - key: DB_PASSWORD
         sync: false
       - key: CRM_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+        fromService: { type: web, name: dd-ms-crm, property: hostport }
       - key: SUPPORT_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-support, property: hostport }
+        fromService: { type: web, name: dd-ms-support, property: hostport }
       - key: BILLING_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-billing, property: hostport }
+        fromService: { type: web, name: dd-ms-billing, property: hostport }
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: WHATSAPP_TOKEN
@@ -197,7 +197,7 @@ services:
       - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
         sync: false
 
-  - type: pserv
+  - type: web
     name: dd-ms-reports
     runtime: docker
     region: virginia
@@ -217,4 +217,4 @@ services:
       - key: DB_PASSWORD
         sync: false
       - key: CRM_HOSTPORT
-        fromService: { type: pserv, name: dd-ms-crm, property: hostport }
+        fromService: { type: web, name: dd-ms-crm, property: hostport }
