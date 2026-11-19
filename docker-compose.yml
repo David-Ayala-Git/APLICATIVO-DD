@@ -1,0 +1,305 @@
+services:
+  consul:
+    image: hashicorp/consul:1.21
+    command: agent -dev -client=0.0.0.0 -ui
+    restart: unless-stopped
+    # Solo desde el propio servidor (tunel SSH): sin ACL, quien llegue a Consul puede
+    # alterar el registro de servicios y su configuracion.
+    ports: [ "127.0.0.1:${CONSUL_UI_PORT:-8500}:8500" ]
+    networks: [ ddnet ]
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      POSTGRES_DB: ${DB_NAME:-ddconexiones}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [ ddnet ]
+
+  # Respaldo diario de toda la base (infra/backup/README.md). Los archivos quedan
+  # en BACKUP_DIR del servidor: copialos fuera de el (otro equipo o la nube),
+  # un respaldo en el mismo disco no sobrevive a que ese disco falle.
+  db-backup:
+    image: postgres:17
+    restart: unless-stopped
+    # tr: el script puede llegar con fin de linea de Windows si se edita alli
+    entrypoint:
+      - sh
+      - -c
+      - tr -d '\r' < /scripts/backup.sh | sh
+    environment:
+      TZ: America/Bogota
+      PGHOST: postgres
+      PGUSER: ${DB_USER:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      PGDATABASE: ${DB_NAME:-ddconexiones}
+      BACKUP_HOUR: ${BACKUP_HOUR:-2}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./infra/backup/backup.sh:/scripts/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  api-gateway:
+    build: ./dd_ms_gateway
+    restart: unless-stopped
+    # sin puerto publicado: el unico punto de entrada es caddy -> dd_front -> /api
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (64+ caracteres)}
+      # Origenes del front (dd_front) autorizados a llamar la API desde el
+      # navegador. En desarrollo el dev-server de Angular hace proxy al 8080,
+      # asi que esto solo pesa cuando la consola se sirve por separado.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200}
+    depends_on:
+      - consul
+    networks: [ ddnet ]
+
+  dd_ms_auth:
+    build: { context: ., dockerfile: dd_ms_auth/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (64+ caracteres)}
+      # Ver SeedAdminGuard: solo hace falta mientras el admin de V2 tenga la clave de fabrica
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_crm:
+    build: { context: ., dockerfile: dd_ms_crm/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+      # Eventos hacia n8n (ver infra/n8n/README.md); vacio = apagados
+      AUTOMATION_WEBHOOK_BASE_URL: http://n8n:5678/webhook
+      AUTOMATION_SECRET: ${AUTOMATION_SECRET:-}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_billing:
+    build: { context: ., dockerfile: dd_ms_billing/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+      # Eventos hacia n8n (ver infra/n8n/README.md); vacio = apagados
+      AUTOMATION_WEBHOOK_BASE_URL: http://n8n:5678/webhook
+      AUTOMATION_SECRET: ${AUTOMATION_SECRET:-}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_network:
+    build: { context: ., dockerfile: dd_ms_network/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+      NETWORK_CRYPTO_SECRET: ${NETWORK_CRYPTO_SECRET:?Define NETWORK_CRYPTO_SECRET en .env}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_support:
+    build: { context: ., dockerfile: dd_ms_support/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_comms:
+    build: { context: ., dockerfile: dd_ms_comms/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  dd_ms_reports:
+    build: { context: ., dockerfile: dd_ms_reports/Dockerfile }   # raiz: necesita ms-common
+    restart: unless-stopped
+    # Con limite la JVM dimensiona su heap al contenedor y no a toda la RAM del host.
+    mem_limit: 512m
+    environment:
+      SPRING_PROFILES_ACTIVE: pdn
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+      CONSUL_HOST: consul
+      # Variable de Spring y no solo CONSUL_HOST: el import "optional:consul:" de
+      # application.yml crea el cliente de Consul antes de leer application-pdn.yml.
+      SPRING_CLOUD_CONSUL_HOST: consul
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DB_NAME: ${DB_NAME:-ddconexiones}
+    depends_on:
+      consul:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks: [ ddnet ]
+
+  # Consola Angular. nginx sirve los estaticos y reenvia /api al gateway, asi
+  # que front y API quedan bajo el mismo origen y no hace falta CORS.
+  dd_front:
+    build: ./dd_front
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    networks: [ ddnet ]
+
+  n8n:
+    # version fija: "latest" puede traer cambios que rompan los flujos importados
+    image: n8nio/n8n:2.47.5
+    restart: unless-stopped
+    # Solo desde el propio servidor (tunel SSH): el primer visitante de un n8n nuevo
+    # crea la cuenta de dueno, y su entorno tiene credenciales de la API.
+    ports: [ "127.0.0.1:${N8N_PORT:-5678}:5678" ]
+    environment:
+      GENERIC_TIMEZONE: America/Bogota
+      # los flujos leen la API y sus credenciales con $env (infra/n8n/README.md)
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      DD_API_URL: http://api-gateway:8080
+      DD_TENANT_SLUG: ${N8N_TENANT_SLUG:-}
+      DD_API_EMAIL: ${N8N_API_EMAIL:-}
+      DD_API_PASSWORD: ${N8N_API_PASSWORD:-}
+      DD_AUTOMATION_SECRET: ${AUTOMATION_SECRET:-}
+    volumes:
+      - n8ndata:/home/node/.n8n
+      - ./infra/n8n/workflows:/workflows:ro
+    networks: [ ddnet ]
+
+  # Unico servicio expuesto a internet. Con un dominio real en DD_DOMAIN obtiene
+  # el certificado de Let's Encrypt solo; con "localhost" usa una CA interna.
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports: [ "${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443" ]
+    environment:
+      DD_DOMAIN: ${DD_DOMAIN:-localhost}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - dd_front
+    networks: [ ddnet ]
+
+volumes:
+  pgdata: {}
+  caddy_data: {}
+  caddy_config: {}
+  n8ndata: {}
+
+networks:
+  ddnet: { driver: bridge }

@@ -1,0 +1,202 @@
+{
+  "name": "D&D · Onboarding de cliente",
+  "nodes": [
+    {
+      "name": "Cliente creado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "client-created",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "2134966c-dbca-74cf-8bdb-acceddfa484e",
+      "id": "b26d72eb-1384-5f3e-0175-44d33c6d3c21",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "name": "Evento autentico",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "fad02736-ba40-86a6-8864-074485b3eca3",
+              "leftValue": "={{ $env.DD_AUTOMATION_SECRET }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d985dbf7-fec7-e4d3-fff4-7f2f6383941b",
+              "leftValue": "={{ $json.headers['x-dd-automation-secret'] }}",
+              "rightValue": "={{ $env.DD_AUTOMATION_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "d7090a7d-5c45-2a95-8469-dcf8a70b765d",
+              "leftValue": "={{ $json.body.tenantId }}",
+              "rightValue": "={{ $env.DD_TENANT_SLUG }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "be4bbb87-fbac-d353-9018-61339effdbc1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $env.DD_API_EMAIL, password: $env.DD_API_PASSWORD }) }}",
+        "options": {}
+      },
+      "executeOnce": true,
+      "id": "f95d3883-46c8-0e39-ce45-6221899b9a7d",
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "name": "Orden de instalacion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/technicians/orders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ clientId: $('Cliente creado').item.json.body.clientId, type: 'INSTALLATION', address: $('Cliente creado').item.json.body.address || null }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "id": "74898bb2-ba8d-bb10-88cb-513199d40cfd",
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "name": "Bienvenida por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Cliente creado').item.json.body.phone, templateName: 'bienvenida', bodyParams: [$('Cliente creado').item.json.body.fullName] }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "id": "5d0fcdd8-425f-2856-e707-a622051ccef7",
+      "position": [
+        960,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cliente creado": {
+      "main": [
+        [
+          {
+            "node": "Evento autentico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evento autentico": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Orden de instalacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orden de instalacion": {
+      "main": [
+        [
+          {
+            "node": "Bienvenida por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "meta": {
+    "notes": "dd_ms_crm llama este webhook al crear un cliente. La autorizacion de la ONU queda fuera hasta integrar GPON real."
+  }
+}

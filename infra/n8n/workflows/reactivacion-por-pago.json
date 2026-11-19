@@ -1,0 +1,337 @@
+{
+  "name": "D&D · Reactivacion por pago",
+  "nodes": [
+    {
+      "name": "Pago confirmado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-confirmed",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "b382f5f9-cb34-c80a-9a27-744c8137d615",
+      "id": "34a1e6ad-e0a6-4e78-b1d9-a66ef51c6374",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "name": "Evento autentico",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "f6ffd261-c4e6-e8e1-121f-562f4b3d5b72",
+              "leftValue": "={{ $env.DD_AUTOMATION_SECRET }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ca0cb63b-afb4-d2aa-5a04-34e629f9fbd6",
+              "leftValue": "={{ $json.headers['x-dd-automation-secret'] }}",
+              "rightValue": "={{ $env.DD_AUTOMATION_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "499b26f9-b59c-5c5b-8ffc-16b77740c024",
+              "leftValue": "={{ $json.body.tenantId }}",
+              "rightValue": "={{ $env.DD_TENANT_SLUG }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "49b839a1-d8ac-ae7d-8201-554d941b3060",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $env.DD_API_EMAIL, password: $env.DD_API_PASSWORD }) }}",
+        "options": {}
+      },
+      "executeOnce": true,
+      "id": "d0116a36-1cbc-d394-4798-d2f3de89a09c",
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "name": "Obtener cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.DD_API_URL }}/api/crm/clients/{{ $('Pago confirmado').item.json.body.clientId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f70c0289-8c4a-e772-ef32-7f2cfe090a3c",
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "name": "Suspendido y con PPPoE",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cfe0e134-af82-46e0-7f43-719a246e90a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "SUSPENDED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "7cffccb9-6835-0d9f-08ec-f99d6ec11f1a",
+              "leftValue": "={{ $json.routerId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a5bf8734-06e1-5d86-cd1c-467fb7206fa6",
+              "leftValue": "={{ $json.pppoeUser }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "eee45eb2-e245-ea5e-8cf1-2b50e6cd1120",
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "name": "Reactivar en MikroTik",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/network/routers/{{ $('Obtener cliente').item.json.routerId }}/enable",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ secretId: $('Obtener cliente').item.json.pppoeUser }) }}",
+        "options": {}
+      },
+      "id": "5eaf64c5-6e47-e69b-2ed4-a1115869a46f",
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "name": "Marcar activo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/crm/clients/{{ $('Obtener cliente').item.json.id }}/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'ACTIVE' }) }}",
+        "options": {}
+      },
+      "id": "24ad1930-0f3e-4a37-672c-e66f39f4bfe7",
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "name": "Confirmar por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.phone, templateName: 'confirmacion_pago', bodyParams: [$json.fullName] }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "id": "f274d136-ce2c-3f4b-eabd-3181b58a6ee4",
+      "position": [
+        1680,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Pago confirmado": {
+      "main": [
+        [
+          {
+            "node": "Evento autentico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evento autentico": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Obtener cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener cliente": {
+      "main": [
+        [
+          {
+            "node": "Suspendido y con PPPoE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Suspendido y con PPPoE": {
+      "main": [
+        [
+          {
+            "node": "Reactivar en MikroTik",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reactivar en MikroTik": {
+      "main": [
+        [
+          {
+            "node": "Marcar activo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar activo": {
+      "main": [
+        [
+          {
+            "node": "Confirmar por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "meta": {
+    "notes": "dd_ms_billing llama este webhook al confirmar un pago (AUTOMATION_WEBHOOK_BASE_URL). Solo reactiva a quien estaba SUSPENDED."
+  }
+}

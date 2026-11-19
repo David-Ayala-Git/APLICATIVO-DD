@@ -1,0 +1,74 @@
+plugins {
+	id 'java-library'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'maven-publish'
+}
+
+group = 'dd.conexiones'
+version = '1.0.0'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+	withSourcesJar()
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('springCloudVersion', "2025.1.3")
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.1"
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+dependencies {
+	// Autoconfiguracion + AOP: se propagan en runtime a cada microservicio que
+	// dependa de esta libreria (necesarios para que @RequiresModule y @Audited
+	// realmente tejan el aspecto, no solo compilen). Boot 4 no publica un starter
+	// "aop" independiente: alcanza con aspectjweaver, ya que spring-context
+	// (transitiva via spring-boot-autoconfigure/webmvc en el consumidor) trae el
+	// soporte de proxies de Spring AOP.
+	api 'org.springframework.boot:spring-boot-autoconfigure'
+	api 'org.aspectj:aspectjweaver'
+
+	// Presentes en tiempo de compilacion; cada microservicio consumidor ya trae
+	// estas dependencias por su cuenta (todos son apps MVC + JPA + Consul).
+	compileOnly 'org.springframework.boot:spring-boot-starter-webmvc'
+	compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+	compileOnly 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Pruebas: los tipos de Hibernate/Spring que en main son compileOnly hacen falta en runtime de test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from components.java
+		}
+	}
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+	// Las versiones las resuelve io.spring.dependency-management via BOM; cada
+	// consumidor de ms-common importa el mismo BOM, asi que el POM publicado no
+	// necesita versiones literales.
+	suppressedValidationErrors.add('dependencies-without-versions')
+}

@@ -1,0 +1,313 @@
+{
+  "name": "D&D · Corte por mora",
+  "nodes": [
+    {
+      "name": "Cada dia 6am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "0e1a9d45-17ae-6ef6-5805-4429cc0d3bb8",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $env.DD_API_EMAIL, password: $env.DD_API_PASSWORD }) }}",
+        "options": {}
+      },
+      "executeOnce": true,
+      "id": "5f1d886a-54ee-d365-a55a-de46029d66f7",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "name": "Facturas vencidas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/billing/overdue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7870f826-e4d3-7fd9-5bac-f299de104d16",
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "name": "Obtener cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.DD_API_URL }}/api/crm/clients/{{ $json.clientId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0888bb8-35e4-460b-12b4-1f482da0001f",
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "name": "Activo y con PPPoE",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "3fc83897-262e-8cbf-6f78-bf87d10b0c1c",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ACTIVE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "78f5e7b3-c0c5-9cc3-f0e1-51e45c0301ac",
+              "leftValue": "={{ $json.routerId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "be698cdf-f3d0-896e-2209-631f24339176",
+              "leftValue": "={{ $json.pppoeUser }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8334b30d-0443-1cc0-87f2-608049714d85",
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "name": "Cortar en MikroTik",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/network/routers/{{ $('Obtener cliente').item.json.routerId }}/cut",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ secretId: $('Obtener cliente').item.json.pppoeUser }) }}",
+        "options": {}
+      },
+      "id": "ff0d2b94-e3d7-f1b3-df2b-fac4f441e45f",
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "name": "Marcar suspendido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/crm/clients/{{ $('Obtener cliente').item.json.id }}/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'SUSPENDED' }) }}",
+        "options": {}
+      },
+      "id": "e37553d3-8217-78ba-e11a-0a515d94decc",
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "name": "Avisar por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DD_API_URL }}/api/whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').first().json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.phone, templateName: 'aviso_corte', bodyParams: [$json.fullName] }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput",
+      "id": "4ffcace7-e65b-a4e5-bb4b-5dfb15f6cfe4",
+      "position": [
+        1680,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cada dia 6am": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Facturas vencidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facturas vencidas": {
+      "main": [
+        [
+          {
+            "node": "Obtener cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener cliente": {
+      "main": [
+        [
+          {
+            "node": "Activo y con PPPoE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activo y con PPPoE": {
+      "main": [
+        [
+          {
+            "node": "Cortar en MikroTik",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cortar en MikroTik": {
+      "main": [
+        [
+          {
+            "node": "Marcar suspendido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar suspendido": {
+      "main": [
+        [
+          {
+            "node": "Avisar por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "meta": {
+    "notes": "Corta en MikroTik a los clientes ACTIVOS con factura vencida que tengan router y usuario PPPoE en su ficha. Los SUSPENDED no se vuelven a cortar."
+  }
+}

@@ -1,0 +1,24 @@
+# Unica puerta de entrada desde internet. HTTPS automatico:
+#  - DD_DOMAIN=consola.ddconexiones.co -> certificado de Let's Encrypt (el DNS debe
+#    apuntar al servidor y los puertos 80/443 deben estar abiertos).
+#  - DD_DOMAIN=localhost (por defecto) -> CA interna de Caddy, solo para pruebas.
+# dd_front (nginx) sirve la consola y reenvia /api al gateway; nada mas se publica.
+{$DD_DOMAIN:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	reverse_proxy dd_front:80 {
+		# IP real del cliente para el limite de intentos de login (dd_ms_auth).
+		# header_up reemplaza la cabecera, asi que el navegador no puede falsearla;
+		# no se usa X-Forwarded-For porque el gateway la descarta.
+		header_up X-Client-IP {remote_host}
+	}
+}

@@ -1,0 +1,18 @@
+# Contexto de build de los microservicios = raiz del repo (necesitan ms-common).
+# Todo lo que no sea codigo Java queda fuera: build mas rapido y, sobre todo,
+# el .env con los secretos NUNCA entra a una imagen.
+.env
+.env.*
+**/.git
+**/.gradle
+**/build
+**/out
+**/.idea
+**/.vscode
+**/*.iml
+**/HELP.md
+dd_front
+sp-ms-streaming-pricing
+infra
+*.docx
+backups

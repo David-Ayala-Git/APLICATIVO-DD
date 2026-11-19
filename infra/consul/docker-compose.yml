@@ -1,0 +1,9 @@
+services:
+  consul:
+    image: hashicorp/consul:1.21
+    command: agent -dev -client=0.0.0.0 -ui
+    ports: [ "8500:8500" ]
+    networks: [ ddnet ]
+
+networks:
+  ddnet: { driver: bridge }

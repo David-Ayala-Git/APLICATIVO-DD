@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dd.conexiones.mscommon.role.RequiresRoleAspectTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-12T19:25:36.085Z" hostname="DESKTOP-49ODF11" time="0.455">
+  <properties/>
+  <testcase name="rolDeLaClasePermiteLeer()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.015"/>
+  <testcase name="rolFueraDeLaListaRecibeExcepcion()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.002"/>
+  <testcase name="anotacionDelMetodoReemplazaLaDeLaClase()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.002"/>
+  <testcase name="superAdminNoEsComodin()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.002"/>
+  <testcase name="sinRolSeRechaza()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.002"/>
+  <testcase name="llamadaInternaServicePasaSiempre()" classname="dd.conexiones.mscommon.role.RequiresRoleAspectTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
