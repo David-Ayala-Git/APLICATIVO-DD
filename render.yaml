@@ -15,6 +15,10 @@ envVarGroups:
         value: "false"
       - key: SPRING_CLOUD_CONSUL_CONFIG_ENABLED
         value: "false"
+      # application-pdn.yml usa ${CONSUL_HOST} sin valor por defecto: se rellena
+      # para que Spring no falle al resolverlo, aunque Consul este apagado.
+      - key: CONSUL_HOST
+        value: localhost
       - key: JAVA_TOOL_OPTIONS
         value: -XX:MaxRAMPercentage=75
       # 7 servicios x 2 = 14 conexiones: cabe en el pool de 15 del plan gratis de Supabase
