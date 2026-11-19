@@ -4,7 +4,7 @@
 2. En **SQL Editor** ejecuta una sola vez `infra/postgres/init/01-schemas.sql`
    (crea los schemas auth, crm, billing, network, support, comms y reports).
    Las tablas las crea Flyway al arrancar cada microservicio.
-3. En **Connect > Session pooler** copia los datos y cargalos en Render:
+3. En **Connect > Session pooler** copia los datos al `.env` (el mismo que se pega en Render):
 
    | Variable      | Valor |
    |---------------|-------|
@@ -16,5 +16,5 @@ Usa el **Session pooler (puerto 5432)**, no el Transaction pooler (6543): Hibern
 y Flyway usan sentencias preparadas y bloqueos de sesion. La conexion directa
 (`db.<ref>.supabase.co`) es solo IPv6 y Render no la alcanza.
 
-El pooler gratis admite 15 conexiones: por eso render.yaml fija `DB_POOL_SIZE=2`
+El pooler gratis admite 15 conexiones: por eso el `.env` fija `DB_POOL_SIZE=2`
 (7 servicios x 2 = 14). Si agregas servicios o replicas, sube el plan de Supabase.

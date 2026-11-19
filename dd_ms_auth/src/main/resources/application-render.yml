@@ -18,16 +18,16 @@ spring:
         simple:
           instances:
             "[dd-ms-auth]":
-              - uri: http://${AUTH_HOSTPORT:dd-ms-auth:8081}
+              - uri: http://${AUTH_HOSTPORT:dd-ms-auth:10000}
             "[dd-ms-crm]":
-              - uri: http://${CRM_HOSTPORT:dd-ms-crm:8082}
+              - uri: http://${CRM_HOSTPORT:dd-ms-crm:10000}
             "[dd-ms-billing]":
-              - uri: http://${BILLING_HOSTPORT:dd-ms-billing:8083}
+              - uri: http://${BILLING_HOSTPORT:dd-ms-billing:10000}
             "[dd-ms-network]":
-              - uri: http://${NETWORK_HOSTPORT:dd-ms-network:8084}
+              - uri: http://${NETWORK_HOSTPORT:dd-ms-network:10000}
             "[dd-ms-support]":
-              - uri: http://${SUPPORT_HOSTPORT:dd-ms-support:8085}
+              - uri: http://${SUPPORT_HOSTPORT:dd-ms-support:10000}
             "[dd-ms-comms]":
-              - uri: http://${COMMS_HOSTPORT:dd-ms-comms:8086}
+              - uri: http://${COMMS_HOSTPORT:dd-ms-comms:10000}
             "[dd-ms-reports]":
-              - uri: http://${REPORTS_HOSTPORT:dd-ms-reports:8087}
+              - uri: http://${REPORTS_HOSTPORT:dd-ms-reports:10000}
