@@ -43,6 +43,8 @@ public class MonolithFlywayConfig {
                     .schemas(schema)
                     .defaultSchema(schema)
                     .createSchemas(true)
+                    .baselineOnMigrate(true)
+                    .baselineVersion("0")
                     .locations("classpath:db/monolith/" + schema)
                     .connectRetries(connectRetries)
                     .connectRetriesInterval(connectRetriesIntervalSeconds)

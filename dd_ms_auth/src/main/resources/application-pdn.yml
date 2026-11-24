@@ -21,6 +21,8 @@ spring:
     enabled: true
     schemas: auth
     default-schema: auth
+    baseline-on-migrate: true
+    baseline-version: 0
     locations: classpath:db/migration
 
   cloud:
