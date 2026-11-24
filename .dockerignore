@@ -1,18 +1,24 @@
-# Contexto de build de los microservicios = raiz del repo (necesitan ms-common).
-# Todo lo que no sea codigo Java queda fuera: build mas rapido y, sobre todo,
-# el .env con los secretos NUNCA entra a una imagen.
+# Contexto de build = raiz del repo (Dockerfile raiz y los de cada microservicio).
+# Fuera todo lo que no sea codigo Java: build mas rapido y, sobre todo, el .env
+# con los secretos NUNCA entra a una imagen.
 .env
 .env.*
 **/.git
 **/.gradle
 **/build
+**/target
 **/out
+**/bin
+**/node_modules
 **/.idea
 **/.vscode
+**/.claude
 **/*.iml
+**/*.log
 **/HELP.md
+**/tmp
 dd_front
 sp-ms-streaming-pricing
 infra
-*.docx
 backups
+*.docx

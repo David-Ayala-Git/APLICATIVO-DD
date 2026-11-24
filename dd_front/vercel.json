@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://dd-ms-gateway.onrender.com/api/:path*"
+      "destination": "https://aplicativo-dd.onrender.com/api/:path*"
     },
     {
       "source": "/((?!api/).*)",

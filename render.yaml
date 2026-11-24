@@ -1,91 +1,60 @@
-# Blueprint de Render: New > Blueprint > repo APLICATIVO-DD (rama main).
-# Crea los 8 microservicios como Web Services con Docker. Render no ejecuta
-# docker-compose: construye cada uno con su Dockerfile.
+# Blueprint de Render (New > Blueprint > repo APLICATIVO-DD, rama main).
+# Un solo Web Service con TODO el ecosistema: el Dockerfile de la raiz compila
+# ms-common + 8 microservicios y entrypoint.sh los arranca juntos. Solo el
+# api-gateway queda expuesto, en PORT=10000.
 #
-# VARIABLES: todas salen de UN SOLO .env (ver .env.example).
-#   1. Dashboard > Environment Groups > New "dd-env" > Add from .env > pegar .env
-#   2. En cada servicio: Environment > Link Environment Group > dd-env
-# Todos escuchan en el puerto que Render pone por defecto (PORT=10000), por eso
-# el mismo .env sirve para los 8 (AUTH_HOSTPORT=dd-ms-auth:10000, etc.).
+# Variables: el mismo .env de siempre (ver .env.example). En el servicio:
+# Environment > "Add from .env" y pegarlo. Las de "sync: false" se piden al
+# crear el Blueprint.
 
 services:
   - type: web
-    name: dd-ms-gateway
+    name: aplicativo-dd
     runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_gateway/Dockerfile
-    dockerContext: ./dd_ms_gateway   # no usa ms-common
-    buildFilter:
-      paths: [ "dd_ms_gateway/**" ]
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon            # crea Supabase en la region mas cercana (West US)
+    # 8 JVM Spring Boot en un contenedor necesitan ~3 GB de RAM. Con "free" o
+    # "starter" (512 MB) el contenedor muere por falta de memoria al arrancar.
+    plan: pro                 # 4 GB
     healthCheckPath: /actuator/health
-
-  - type: web
-    name: dd-ms-auth
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_auth/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
     buildFilter:
-      paths: [ "dd_ms_auth/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-crm
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_crm/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_crm/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-billing
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_billing/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_billing/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-network
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_network/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_network/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-support
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_support/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_support/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-comms
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_comms/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_comms/**", "ms-common/**" ]
-
-  - type: web
-    name: dd-ms-reports
-    runtime: docker
-    region: virginia
-    plan: starter
-    dockerfilePath: ./dd_ms_reports/Dockerfile
-    dockerContext: .                 # raiz: el Dockerfile necesita ms-common
-    buildFilter:
-      paths: [ "dd_ms_reports/**", "ms-common/**" ]
+      paths:
+        - Dockerfile
+        - entrypoint.sh
+        - settings.gradle
+        - build.gradle
+        - gradle/**
+        - ms-common/**
+        - dd_ms_*/**
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: pdn,render
+      - key: PORT
+        value: "10000"
+      # Supabase > Connect > Session pooler (infra/supabase/README.md)
+      - key: DB_URL             # jdbc:postgresql://<host>.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: DB_USER            # postgres.<ref-del-proyecto>
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # 7 servicios x 2 = 14 conexiones: cabe en el pool de 15 del plan gratis de Supabase
+      - key: DB_POOL_SIZE
+        value: "2"
+      - key: JWT_SECRET         # 64+ caracteres
+        sync: false
+      - key: NETWORK_CRYPTO_SECRET
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD   # 12+ caracteres; obligatorio en el primer arranque
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://*.vercel.app
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false

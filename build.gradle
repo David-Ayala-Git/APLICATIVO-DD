@@ -1,0 +1,14 @@
+// Tareas agregadas del monorepo. Los jars quedan en <servicio>/build/libs/.
+def services = gradle.includedBuilds.findAll { it.name.startsWith('dd_ms_') }
+
+tasks.register('bootJarAll') {
+    group = 'build'
+    description = 'Genera el jar ejecutable de todos los microservicios.'
+    dependsOn services.collect { it.task(':bootJar') }
+}
+
+tasks.register('testAll') {
+    group = 'verification'
+    description = 'Corre los tests de ms-common y de todos los microservicios.'
+    dependsOn gradle.includedBuilds.collect { it.task(':test') }
+}

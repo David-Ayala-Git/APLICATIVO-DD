@@ -1,0 +1,23 @@
+// Build "padre" del monorepo (equivalente Gradle a un pom.xml con <modules>).
+// Cada microservicio sigue siendo un proyecto Gradle independiente (con su
+// propio gradlew, como antes); aqui se incluyen como build compuesto para
+// compilarlos TODOS en un solo paso:   ./gradlew bootJarAll
+//
+// ms-common se incluye primero: Gradle sustituye automaticamente la dependencia
+// 'dd.conexiones:ms-common:1.0.0' de cada servicio por este proyecto, sin
+// necesidad de publishToMavenLocal.
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'aplicativo-dd'
+
+includeBuild 'ms-common'
+includeBuild 'dd_ms_gateway'
+includeBuild 'dd_ms_auth'
+includeBuild 'dd_ms_crm'
+includeBuild 'dd_ms_billing'
+includeBuild 'dd_ms_network'
+includeBuild 'dd_ms_support'
+includeBuild 'dd_ms_comms'
+includeBuild 'dd_ms_reports'
