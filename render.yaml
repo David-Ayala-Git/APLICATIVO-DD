@@ -14,9 +14,10 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: oregon            # crea Supabase en la region mas cercana (West US)
-    # 8 JVM Spring Boot en un contenedor necesitan ~3 GB de RAM. Con "free" o
+    # Probado en local: los 8 servicios en reposo usan ~1.4 GB. Con "free" o
     # "starter" (512 MB) el contenedor muere por falta de memoria al arrancar.
-    plan: pro                 # 4 GB
+    # Si en uso real aparece OutOfMemory en los logs, sube a "pro" (4 GB).
+    plan: standard            # 2 GB
     healthCheckPath: /actuator/health
     buildFilter:
       paths:

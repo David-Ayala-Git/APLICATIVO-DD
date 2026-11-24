@@ -37,10 +37,11 @@ server:
   # Render inyecta PORT; en docker compose no existe y se usa SERVER_PORT
   port: ${PORT:${SERVER_PORT:8086}}
 
+# Vacias = el servicio arranca igual y esas funciones responden 502
 anthropic:
-  api-key: ${ANTHROPIC_API_KEY}
+  api-key: ${ANTHROPIC_API_KEY:}
 
 whatsapp:
-  token: ${WHATSAPP_TOKEN}
-  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID}
-  webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+  token: ${WHATSAPP_TOKEN:}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:}
