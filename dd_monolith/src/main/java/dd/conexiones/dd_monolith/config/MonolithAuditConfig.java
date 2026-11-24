@@ -27,7 +27,7 @@ import java.util.UUID;
 public class MonolithAuditConfig {
 
     private static final Map<String, String> PACKAGE_TO_SCHEMA = Map.of(
-            "dd.conexiones.dd_ms_auth", "auth",
+            "dd.conexiones.dd_ms_auth", "dd_auth",
             "dd.conexiones.dd_ms_crm", "crm",
             "dd.conexiones.dd_ms_billing", "billing",
             "dd.conexiones.dd_ms_network", "network",
@@ -51,7 +51,7 @@ public class MonolithAuditConfig {
         private final JdbcTemplate jdbcTemplate;
 
         public MonolithAuditLogWriter(JdbcTemplate jdbcTemplate) {
-            super(jdbcTemplate, "auth");
+            super(jdbcTemplate, "dd_auth");
             this.jdbcTemplate = jdbcTemplate;
         }
 
@@ -83,7 +83,7 @@ public class MonolithAuditConfig {
                     .filter(e -> pkg.startsWith(e.getKey()))
                     .map(Map.Entry::getValue)
                     .findFirst()
-                    .orElse("auth");
+                    .orElse("dd_auth");
             String detail = Arrays.toString(joinPoint.getArgs());
             writer.recordInSchema(schema, audited.value(), detail);
         }

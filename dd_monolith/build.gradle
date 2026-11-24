@@ -70,13 +70,21 @@ dependencyManagement {
 
 // Empaqueta las migraciones Flyway de cada microservicio bajo db/monolith/<esquema>/
 // para que no colisionen los archivos V1__*.sql en classpath:db/migration.
-def monolithSchemas = ['auth', 'crm', 'billing', 'network', 'support', 'comms', 'reports']
+def monolithModules = [
+	dd_auth: 'dd_ms_auth',
+	crm    : 'dd_ms_crm',
+	billing: 'dd_ms_billing',
+	network: 'dd_ms_network',
+	support: 'dd_ms_support',
+	comms  : 'dd_ms_comms',
+	reports: 'dd_ms_reports'
+]
 def generatedMigrationsDir = layout.buildDirectory.dir('generated-resources/monolith-migrations')
 
 def copyMonolithMigrations = tasks.register('copyMonolithMigrations', Copy) {
 	into generatedMigrationsDir
-	monolithSchemas.each { schema ->
-		from("../dd_ms_${schema}/src/main/resources/db/migration") {
+	monolithModules.each { schema, moduleDir ->
+		from("../${moduleDir}/src/main/resources/db/migration") {
 			into "db/monolith/${schema}"
 		}
 	}

@@ -1,4 +1,4 @@
-CREATE TABLE auth.audit_log (
+CREATE TABLE dd_auth.audit_log (
   id          UUID PRIMARY KEY,
   tenant_id   VARCHAR(60),
   user_id     VARCHAR(60),
@@ -8,5 +8,5 @@ CREATE TABLE auth.audit_log (
   created_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_auth_audit_log_tenant ON auth.audit_log(tenant_id);
-CREATE INDEX idx_auth_audit_log_action ON auth.audit_log(action);
+CREATE INDEX idx_auth_audit_log_tenant ON dd_auth.audit_log(tenant_id);
+CREATE INDEX idx_auth_audit_log_action ON dd_auth.audit_log(action);

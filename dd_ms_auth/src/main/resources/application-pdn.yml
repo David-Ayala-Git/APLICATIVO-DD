@@ -14,15 +14,13 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        default_schema: auth
+        default_schema: dd_auth
     open-in-view: false
 
   flyway:
     enabled: true
-    schemas: auth
-    default-schema: auth
-    baseline-on-migrate: true
-    baseline-version: 0
+    schemas: dd_auth
+    default-schema: dd_auth
     locations: classpath:db/migration
 
   cloud:

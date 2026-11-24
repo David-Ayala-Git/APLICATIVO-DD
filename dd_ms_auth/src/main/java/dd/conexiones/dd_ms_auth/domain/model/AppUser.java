@@ -18,7 +18,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(schema = "auth", name = "app_user")
+@Table(schema = "dd_auth", name = "app_user")
 @Getter
 @Setter
 public class AppUser {

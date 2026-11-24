@@ -25,7 +25,7 @@ import java.util.UUID;
  * y ningun otro microservicio lo valida todavia.
  */
 @Entity
-@Table(schema = "auth", name = "custom_role")
+@Table(schema = "dd_auth", name = "custom_role")
 @Getter
 @Setter
 public class CustomRole {

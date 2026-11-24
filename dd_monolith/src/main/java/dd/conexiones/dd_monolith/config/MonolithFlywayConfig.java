@@ -28,7 +28,7 @@ public class MonolithFlywayConfig {
     private static final Logger log = LoggerFactory.getLogger(MonolithFlywayConfig.class);
 
     public static final List<String> SCHEMAS = List.of(
-            "auth", "crm", "billing", "network", "support", "comms", "reports"
+            "dd_auth", "crm", "billing", "network", "support", "comms", "reports"
     );
 
     @Bean("monolithFlywayMigrator")

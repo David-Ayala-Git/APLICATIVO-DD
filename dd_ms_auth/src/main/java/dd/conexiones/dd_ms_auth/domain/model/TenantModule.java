@@ -12,7 +12,7 @@ import org.hibernate.type.SqlTypes;
 import java.util.Map;
 
 @Entity
-@Table(schema = "auth", name = "tenant_module")
+@Table(schema = "dd_auth", name = "tenant_module")
 @Getter
 @Setter
 public class TenantModule {

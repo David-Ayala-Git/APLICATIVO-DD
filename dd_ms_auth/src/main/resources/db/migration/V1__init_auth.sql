@@ -1,4 +1,4 @@
-CREATE TABLE auth.tenant (
+CREATE TABLE dd_auth.tenant (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name          VARCHAR(120) NOT NULL,
   slug          VARCHAR(60)  NOT NULL UNIQUE,
@@ -9,17 +9,17 @@ CREATE TABLE auth.tenant (
   created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE TABLE auth.tenant_module (
-  tenant_id  UUID NOT NULL REFERENCES auth.tenant(id),
+CREATE TABLE dd_auth.tenant_module (
+  tenant_id  UUID NOT NULL REFERENCES dd_auth.tenant(id),
   module_key VARCHAR(40) NOT NULL,
   enabled    BOOLEAN NOT NULL DEFAULT false,
   config     JSONB,
   PRIMARY KEY (tenant_id, module_key)
 );
 
-CREATE TABLE auth.app_user (
+CREATE TABLE dd_auth.app_user (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id     UUID REFERENCES auth.tenant(id),
+  tenant_id     UUID REFERENCES dd_auth.tenant(id),
   email         VARCHAR(160) NOT NULL UNIQUE,
   password_hash VARCHAR(200) NOT NULL,
   full_name     VARCHAR(160) NOT NULL,
@@ -28,6 +28,6 @@ CREATE TABLE auth.app_user (
   created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_tenant_slug ON auth.tenant(slug);
-CREATE INDEX idx_user_tenant ON auth.app_user(tenant_id);
-CREATE INDEX idx_user_email ON auth.app_user(email);
+CREATE INDEX idx_tenant_slug ON dd_auth.tenant(slug);
+CREATE INDEX idx_user_tenant ON dd_auth.app_user(tenant_id);
+CREATE INDEX idx_user_email ON dd_auth.app_user(email);
