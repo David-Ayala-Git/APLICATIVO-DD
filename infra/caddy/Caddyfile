@@ -2,7 +2,7 @@
 #  - DD_DOMAIN=consola.ddconexiones.co -> certificado de Let's Encrypt (el DNS debe
 #    apuntar al servidor y los puertos 80/443 deben estar abiertos).
 #  - DD_DOMAIN=localhost (por defecto) -> CA interna de Caddy, solo para pruebas.
-# dd_front (nginx) sirve la consola y reenvia /api al gateway; nada mas se publica.
+# Caddy publica unicamente el api-gateway; el frontend se despliega por separado.
 {$DD_DOMAIN:localhost} {
 	encode zstd gzip
 
@@ -15,7 +15,7 @@
 		-Server
 	}
 
-	reverse_proxy dd_front:80 {
+	reverse_proxy api-gateway:8080 {
 		# IP real del cliente para el limite de intentos de login (dd_ms_auth).
 		# header_up reemplaza la cabecera, asi que el navegador no puede falsearla;
 		# no se usa X-Forwarded-For porque el gateway la descarta.

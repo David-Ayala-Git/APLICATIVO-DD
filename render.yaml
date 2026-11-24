@@ -1,7 +1,6 @@
 # Blueprint de Render (New > Blueprint > repo APLICATIVO-DD, rama main).
-# Un solo Web Service con TODO el ecosistema: el Dockerfile de la raiz compila
-# ms-common + 8 microservicios y entrypoint.sh los arranca juntos. Solo el
-# api-gateway queda expuesto, en PORT=10000.
+# Un solo Web Service en plan FREE (512 MB RAM): el Dockerfile de la raiz compila
+# dd_monolith (los 7 dominios + seguridad/CORS en una unica JVM) y escucha en PORT=10000.
 #
 # Variables: el mismo .env de siempre (ver .env.example). En el servicio:
 # Environment > "Add from .env" y pegarlo. Las de "sync: false" se piden al
@@ -14,20 +13,17 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: oregon            # crea Supabase en la region mas cercana (West US)
-    # Probado en local: los 8 servicios en reposo usan ~1.4 GB. Con "free" o
-    # "starter" (512 MB) el contenedor muere por falta de memoria al arrancar.
-    # Si en uso real aparece OutOfMemory en los logs, sube a "pro" (4 GB).
-    plan: standard            # 2 GB
+    plan: free                # 512 MB RAM (suficiente para 1 JVM unificada)
     healthCheckPath: /actuator/health
     buildFilter:
       paths:
         - Dockerfile
-        - entrypoint.sh
         - settings.gradle
         - build.gradle
         - gradle/**
         - ms-common/**
         - dd_ms_*/**
+        - dd_monolith/**
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: pdn,render
@@ -40,9 +36,9 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
-      # 7 servicios x 2 = 14 conexiones: cabe en el pool de 15 del plan gratis de Supabase
+      # 1 sola JVM: 5 conexiones caben holgadamente en el pool de 15 de Supabase Free
       - key: DB_POOL_SIZE
-        value: "2"
+        value: "5"
       - key: JWT_SECRET         # 64+ caracteres
         sync: false
       - key: NETWORK_CRYPTO_SECRET

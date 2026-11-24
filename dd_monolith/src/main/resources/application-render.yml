@@ -1,0 +1,23 @@
+server:
+  port: ${PORT:10000}
+
+spring:
+  cloud:
+    discovery:
+      client:
+        simple:
+          instances:
+            "[dd-ms-auth]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-crm]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-billing]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-network]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-support]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-comms]":
+              - uri: http://localhost:${PORT:10000}
+            "[dd-ms-reports]":
+              - uri: http://localhost:${PORT:10000}

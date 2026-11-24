@@ -17,7 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dd.conexiones.dd_ms_comms")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AiAgentNotFoundException.class)

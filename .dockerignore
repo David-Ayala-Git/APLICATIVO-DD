@@ -17,8 +17,6 @@
 **/*.log
 **/HELP.md
 **/tmp
-dd_front
-sp-ms-streaming-pricing
 infra
 backups
 *.docx

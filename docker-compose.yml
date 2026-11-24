@@ -86,7 +86,7 @@ services:
   api-gateway:
     build: ./dd_ms_gateway
     restart: unless-stopped
-    # sin puerto publicado: el unico punto de entrada es caddy -> dd_front -> /api
+    # sin puerto publicado: el unico punto de entrada es caddy -> api-gateway
     mem_limit: 512m
     env_file: .env
     environment:
@@ -170,15 +170,6 @@ services:
     depends_on: *ms-depends
     networks: [ ddnet ]
 
-  # Consola Angular. nginx sirve los estaticos y reenvia /api al gateway, asi
-  # que front y API quedan bajo el mismo origen y no hace falta CORS.
-  dd_front:
-    build: ./dd_front
-    restart: unless-stopped
-    depends_on:
-      - api-gateway
-    networks: [ ddnet ]
-
   n8n:
     # version fija: "latest" puede traer cambios que rompan los flujos importados
     image: n8nio/n8n:2.47.5
@@ -213,7 +204,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - dd_front
+      - api-gateway
     networks: [ ddnet ]
 
 volumes:

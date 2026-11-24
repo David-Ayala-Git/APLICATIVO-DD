@@ -17,6 +17,3 @@
 *.iml
 
 backups/
-
-# Proyecto aparte, no se despliega con este monorepo
-sp-ms-streaming-pricing/

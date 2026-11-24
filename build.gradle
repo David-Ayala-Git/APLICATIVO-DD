@@ -7,6 +7,18 @@ tasks.register('bootJarAll') {
     dependsOn services.collect { it.task(':bootJar') }
 }
 
+tasks.register('bootJarMonolith') {
+    group = 'build'
+    description = 'Genera el jar ejecutable monolitico (1 sola JVM para Render Free).'
+    dependsOn gradle.includedBuild('dd_monolith').task(':bootJar')
+}
+
+tasks.register('testMonolith') {
+    group = 'verification'
+    description = 'Corre los tests del empaquetado monolitico.'
+    dependsOn gradle.includedBuild('dd_monolith').task(':test')
+}
+
 tasks.register('testAll') {
     group = 'verification'
     description = 'Corre los tests de ms-common y de todos los microservicios.'

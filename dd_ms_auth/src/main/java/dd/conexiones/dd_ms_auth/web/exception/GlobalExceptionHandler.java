@@ -20,7 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dd.conexiones.dd_ms_auth")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({TenantNotFoundException.class, UserNotFoundException.class, CustomRoleNotFoundException.class})

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dd.conexiones.dd_ms_billing")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({InvoiceNotFoundException.class, PaymentNotFoundException.class})
