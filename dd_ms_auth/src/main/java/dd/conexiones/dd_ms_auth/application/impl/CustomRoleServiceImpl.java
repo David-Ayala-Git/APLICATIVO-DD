@@ -74,7 +74,20 @@ public class CustomRoleServiceImpl implements CustomRoleService {
         role.setName(request.name());
         role.setDescription(request.description());
         role.setPermissions(request.permissions());
+        if (request.enabled() != null) {
+            role.setEnabled(request.enabled());
+        }
 
+        return customRoleMapper.toDto(customRoleRepository.save(role));
+    }
+
+    @Override
+    @Audited("role.status")
+    public CustomRoleDTO updateStatus(UUID tenantId, UUID roleId, boolean enabled) {
+        Tenant tenant = getTenantOrThrow(tenantId);
+        customRoleValidator.validateCanManage(tenant);
+        CustomRole role = getRoleOrThrow(tenantId, roleId);
+        role.setEnabled(enabled);
         return customRoleMapper.toDto(customRoleRepository.save(role));
     }
 

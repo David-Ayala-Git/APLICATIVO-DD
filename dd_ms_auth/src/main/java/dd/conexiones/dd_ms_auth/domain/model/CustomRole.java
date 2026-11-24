@@ -47,6 +47,9 @@ public class CustomRole {
     @Column(nullable = false, columnDefinition = "jsonb")
     private List<String> permissions = List.of();
 
+    @Column(nullable = false)
+    private boolean enabled = true;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

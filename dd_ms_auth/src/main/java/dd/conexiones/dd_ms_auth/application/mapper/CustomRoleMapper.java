@@ -14,6 +14,7 @@ public class CustomRoleMapper {
                 role.getName(),
                 role.getDescription(),
                 role.getPermissions(),
+                role.isEnabled(),
                 role.getCreatedAt()
         );
     }

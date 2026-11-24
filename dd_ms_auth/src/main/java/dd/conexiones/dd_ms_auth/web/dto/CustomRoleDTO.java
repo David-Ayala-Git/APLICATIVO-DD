@@ -10,6 +10,7 @@ public record CustomRoleDTO(
         String name,
         String description,
         List<String> permissions,
+        boolean enabled,
         OffsetDateTime createdAt
 ) {
 }

@@ -9,6 +9,7 @@ import java.util.List;
 public record UpdateCustomRoleRequest(
         @NotBlank @Size(max = 80) String name,
         @Size(max = 255) String description,
-        @NotNull List<String> permissions
+        @NotNull List<String> permissions,
+        Boolean enabled
 ) {
 }

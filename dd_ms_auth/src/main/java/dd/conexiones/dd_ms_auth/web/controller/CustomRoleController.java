@@ -4,10 +4,12 @@ import dd.conexiones.dd_ms_auth.application.service.CustomRoleService;
 import dd.conexiones.dd_ms_auth.web.dto.CreateCustomRoleRequest;
 import dd.conexiones.dd_ms_auth.web.dto.CustomRoleDTO;
 import dd.conexiones.dd_ms_auth.web.dto.UpdateCustomRoleRequest;
+import dd.conexiones.dd_ms_auth.web.dto.UpdateCustomRoleStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,6 +50,12 @@ public class CustomRoleController {
     public CustomRoleDTO update(@PathVariable UUID tenantId, @PathVariable UUID roleId,
                                  @Valid @RequestBody UpdateCustomRoleRequest request) {
         return customRoleService.update(tenantId, roleId, request);
+    }
+
+    @PatchMapping("/{roleId}/status")
+    public CustomRoleDTO updateStatus(@PathVariable UUID tenantId, @PathVariable UUID roleId,
+                                      @RequestBody UpdateCustomRoleStatusRequest request) {
+        return customRoleService.updateStatus(tenantId, roleId, request.enabled());
     }
 
     @DeleteMapping("/{roleId}")

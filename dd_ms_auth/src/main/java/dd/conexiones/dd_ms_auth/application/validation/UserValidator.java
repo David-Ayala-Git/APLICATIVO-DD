@@ -2,6 +2,7 @@ package dd.conexiones.dd_ms_auth.application.validation;
 
 import dd.conexiones.dd_ms_auth.domain.exception.CustomRoleNotFoundException;
 import dd.conexiones.dd_ms_auth.domain.exception.DuplicateEmailException;
+import dd.conexiones.dd_ms_auth.domain.exception.InvalidUserTenantException;
 import dd.conexiones.dd_ms_auth.domain.model.CustomRole;
 import dd.conexiones.dd_ms_auth.domain.repository.AppUserRepository;
 import dd.conexiones.dd_ms_auth.domain.repository.CustomRoleRepository;
@@ -35,6 +36,9 @@ public class UserValidator {
                 .orElseThrow(() -> new CustomRoleNotFoundException(customRoleId.toString()));
         if (tenantId == null || !role.getTenantId().equals(tenantId)) {
             throw new CustomRoleNotFoundException(customRoleId.toString());
+        }
+        if (!role.isEnabled()) {
+            throw new InvalidUserTenantException("El rol personalizado esta deshabilitado");
         }
     }
 }

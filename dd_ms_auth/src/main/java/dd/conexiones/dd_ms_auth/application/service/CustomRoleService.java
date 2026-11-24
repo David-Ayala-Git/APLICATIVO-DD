@@ -14,5 +14,7 @@ public interface CustomRoleService {
 
     CustomRoleDTO update(UUID tenantId, UUID roleId, UpdateCustomRoleRequest request);
 
+    CustomRoleDTO updateStatus(UUID tenantId, UUID roleId, boolean enabled);
+
     void delete(UUID tenantId, UUID roleId);
 }
