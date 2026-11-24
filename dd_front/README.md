@@ -114,3 +114,17 @@ styles/         tokens de marca, base, piezas reutilizables y pantallas
 - **Fuentes e iconos** se cargan de Google Fonts y el CDN de Font Awesome, como
   en el mockup. Para un despliegue sin internet de salida, bajalos a `public/` y
   cambia los `<link>` de `src/index.html`.
+
+## Despliegue en Vercel
+
+Configurado en `vercel.json` (build de Angular, Node 22 por `engines`).
+
+1. Vercel > **Add New > Project** > importar `David-Ayala-Git/APLICATIVO-DD`.
+2. **Root Directory: `dd_front`** (el repo es un monorepo). Framework, comandos y
+   carpeta de salida se toman de `vercel.json`; no hace falta tocarlos.
+3. No necesita variables de entorno: la URL de la API no se configura en Vercel.
+
+La consola llama a `/api/...` en su mismo dominio y Vercel lo reenvia al
+gateway en Render (`rewrites` de `vercel.json`), asi no hay CORS. Si el
+servicio de Render tiene otra URL que `https://aplicativo-dd.onrender.com`,
+cambiala en `vercel.json` y vuelve a desplegar.
