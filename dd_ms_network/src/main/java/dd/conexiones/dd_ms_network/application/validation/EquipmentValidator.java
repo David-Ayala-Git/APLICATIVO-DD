@@ -4,6 +4,8 @@ import dd.conexiones.dd_ms_network.domain.exception.DuplicateSerialException;
 import dd.conexiones.dd_ms_network.domain.repository.EquipmentRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class EquipmentValidator {
 
@@ -15,6 +17,12 @@ public class EquipmentValidator {
 
     public void validateSerialAvailable(String tenantId, String serialNumber) {
         if (equipmentRepository.existsByTenantIdAndSerialNumber(tenantId, serialNumber)) {
+            throw new DuplicateSerialException(serialNumber);
+        }
+    }
+
+    public void validateSerialAvailableForUpdate(String tenantId, String serialNumber, UUID id) {
+        if (equipmentRepository.existsByTenantIdAndSerialNumberAndIdNot(tenantId, serialNumber, id)) {
             throw new DuplicateSerialException(serialNumber);
         }
     }

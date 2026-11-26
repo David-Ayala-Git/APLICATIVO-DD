@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface EquipmentRepository extends JpaRepository<Equipment, UUID> {
     boolean existsByTenantIdAndSerialNumber(String tenantId, String serialNumber);
+
+    boolean existsByTenantIdAndSerialNumberAndIdNot(String tenantId, String serialNumber, UUID id);
 }

@@ -3,14 +3,19 @@ package dd.conexiones.dd_ms_crm.web.controller;
 import dd.conexiones.dd_ms_crm.application.service.PlanService;
 import dd.conexiones.dd_ms_crm.web.dto.CreatePlanRequest;
 import dd.conexiones.dd_ms_crm.web.dto.PlanDTO;
+import dd.conexiones.dd_ms_crm.web.dto.UpdatePlanRequest;
+import dd.conexiones.dd_ms_crm.web.dto.UpdatePlanStatusRequest;
 import dd.conexiones.mscommon.module.RequiresModule;
 import dd.conexiones.mscommon.role.RequiresRole;
 import dd.conexiones.mscommon.role.Roles;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -46,5 +51,24 @@ public class PlanController {
     @ResponseStatus(HttpStatus.CREATED)
     public PlanDTO create(@Valid @RequestBody CreatePlanRequest request) {
         return planService.create(request);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP})
+    @PutMapping("/{id}")
+    public PlanDTO update(@PathVariable UUID id, @Valid @RequestBody UpdatePlanRequest request) {
+        return planService.update(id, request);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP})
+    @PatchMapping("/{id}/status")
+    public PlanDTO updateStatus(@PathVariable UUID id, @RequestBody UpdatePlanStatusRequest request) {
+        return planService.updateStatus(id, request.enabled());
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP})
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        planService.delete(id);
     }
 }

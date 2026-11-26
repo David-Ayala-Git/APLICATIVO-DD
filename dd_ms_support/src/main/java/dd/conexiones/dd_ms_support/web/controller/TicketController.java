@@ -55,6 +55,18 @@ public class TicketController {
     }
 
     @RequiresRole({Roles.ADMIN_ISP, Roles.OPERADOR, Roles.TECNICO})
+    @PostMapping("/{id}/start")
+    public TicketDTO start(@PathVariable UUID id) {
+        return ticketService.start(id);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.OPERADOR, Roles.TECNICO})
+    @PostMapping("/{id}/finish")
+    public TicketDTO finish(@PathVariable UUID id) {
+        return ticketService.finish(id);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.OPERADOR, Roles.TECNICO})
     @PostMapping("/{id}/resolve")
     public TicketDTO resolve(@PathVariable UUID id) {
         return ticketService.resolve(id);

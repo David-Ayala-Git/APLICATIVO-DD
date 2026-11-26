@@ -9,6 +9,7 @@ public class TicketMapper {
 
     public TicketDTO toDto(Ticket ticket) {
         return new TicketDTO(ticket.getId(), ticket.getClientId(), ticket.getReason(), ticket.getPriority(),
-                ticket.getStatus(), ticket.getAssignedTo(), ticket.getSlaDueAt(), ticket.getCreatedAt());
+                ticket.getStatus(), ticket.getAssignedTo(), ticket.getSlaDueAt(), ticket.getStartedAt(),
+                ticket.getFinishedAt(), ticket.getCreatedAt());
     }
 }

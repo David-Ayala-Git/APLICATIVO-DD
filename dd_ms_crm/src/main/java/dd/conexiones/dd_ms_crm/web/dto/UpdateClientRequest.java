@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record UpdateClientRequest(
+        String clientCode,
         @NotBlank String fullName,
         String phone,
         String address,

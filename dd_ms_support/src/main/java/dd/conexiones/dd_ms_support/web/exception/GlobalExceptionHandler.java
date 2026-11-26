@@ -1,5 +1,6 @@
 package dd.conexiones.dd_ms_support.web.exception;
 
+import dd.conexiones.dd_ms_support.domain.exception.InvalidSupportStateException;
 import dd.conexiones.dd_ms_support.domain.exception.TechnicianNotFoundException;
 import dd.conexiones.dd_ms_support.domain.exception.TicketNotFoundException;
 import dd.conexiones.dd_ms_support.domain.exception.WorkOrderNotFoundException;
@@ -23,8 +24,8 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(MissingTenantException.class)
-    public ResponseEntity<ErrorResponse> handleMissingTenant(MissingTenantException ex, HttpServletRequest request) {
+    @ExceptionHandler({MissingTenantException.class, InvalidSupportStateException.class})
+    public ResponseEntity<ErrorResponse> handleMissingTenant(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 

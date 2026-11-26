@@ -4,10 +4,12 @@ import dd.conexiones.dd_ms_billing.application.mapper.InvoiceMapper;
 import dd.conexiones.dd_ms_billing.application.port.ElectronicInvoiceProvider;
 import dd.conexiones.dd_ms_billing.application.port.ElectronicInvoiceResult;
 import dd.conexiones.dd_ms_billing.application.service.InvoiceService;
+import dd.conexiones.dd_ms_billing.domain.exception.ClosedPeriodException;
 import dd.conexiones.dd_ms_billing.domain.exception.InvoiceNotFoundException;
 import dd.conexiones.dd_ms_billing.domain.model.Invoice;
 import dd.conexiones.dd_ms_billing.domain.model.enums.InvoiceStatus;
 import dd.conexiones.dd_ms_billing.domain.repository.InvoiceRepository;
+import dd.conexiones.dd_ms_billing.domain.repository.PaymentRepository;
 import dd.conexiones.dd_ms_billing.infrastructure.client.CrmClient;
 import dd.conexiones.dd_ms_billing.infrastructure.client.dto.ClientSummary;
 import dd.conexiones.dd_ms_billing.infrastructure.client.dto.PlanSummary;
@@ -17,6 +19,7 @@ import dd.conexiones.mscommon.tenant.TenantFilterEnabler;
 import dd.conexiones.dd_ms_billing.web.dto.BillingRunResult;
 import dd.conexiones.dd_ms_billing.web.dto.CreateInvoiceRequest;
 import dd.conexiones.dd_ms_billing.web.dto.InvoiceDTO;
+import dd.conexiones.dd_ms_billing.web.dto.UpdateInvoiceRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private static final DateTimeFormatter PERIOD_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final InvoiceRepository invoiceRepository;
+    private final PaymentRepository paymentRepository;
     private final InvoiceMapper invoiceMapper;
     private final TenantFilterEnabler tenantFilterEnabler;
     private final CrmClient crmClient;
@@ -43,10 +47,11 @@ public class InvoiceServiceImpl implements InvoiceService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public InvoiceServiceImpl(InvoiceRepository invoiceRepository, InvoiceMapper invoiceMapper,
-                               TenantFilterEnabler tenantFilterEnabler, CrmClient crmClient,
-                               ElectronicInvoiceProvider electronicInvoiceProvider) {
+    public InvoiceServiceImpl(InvoiceRepository invoiceRepository, PaymentRepository paymentRepository,
+                               InvoiceMapper invoiceMapper, TenantFilterEnabler tenantFilterEnabler,
+                               CrmClient crmClient, ElectronicInvoiceProvider electronicInvoiceProvider) {
         this.invoiceRepository = invoiceRepository;
+        this.paymentRepository = paymentRepository;
         this.invoiceMapper = invoiceMapper;
         this.tenantFilterEnabler = tenantFilterEnabler;
         this.crmClient = crmClient;
@@ -84,6 +89,47 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice = invoiceRepository.saveAndFlush(invoice);
         issueElectronically(invoice);
         return invoiceMapper.toDto(invoice);
+    }
+
+    @Override
+    @Audited("invoice.update")
+    public InvoiceDTO update(UUID id, UpdateInvoiceRequest request) {
+        Invoice invoice = findOwnInvoice(id);
+        validateCurrentPeriod(invoice);
+        invoice.setPlanId(request.planId());
+        invoice.setAmount(request.amount());
+        invoice.setDueDate(request.dueDate());
+        if (request.status() != null) {
+            invoice.setStatus(request.status());
+        }
+        return invoiceMapper.toDto(invoiceRepository.save(invoice));
+    }
+
+    @Override
+    @Audited("invoice.delete")
+    public void delete(UUID id) {
+        Invoice invoice = findOwnInvoice(id);
+        validateCurrentPeriod(invoice);
+        if (paymentRepository.existsByInvoiceId(id)) {
+            throw new ClosedPeriodException("No se puede eliminar la factura porque tiene pagos registrados. Elimina primero el pago asociado.");
+        }
+        invoiceRepository.delete(invoice);
+    }
+
+    private Invoice findOwnInvoice(UUID id) {
+        String tenantId = TenantContext.require();
+        return invoiceRepository.findById(id)
+                .filter(inv -> inv.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new InvoiceNotFoundException(id.toString()));
+    }
+
+    private void validateCurrentPeriod(Invoice invoice) {
+        String currentPeriod = YearMonth.now().format(PERIOD_FORMAT);
+        if (!currentPeriod.equals(invoice.getPeriod())) {
+            throw new ClosedPeriodException(
+                    "Solo se pueden editar o eliminar facturas del periodo actual (" + currentPeriod
+                            + "). El periodo " + invoice.getPeriod() + " ya esta cerrado.");
+        }
     }
 
     @Override

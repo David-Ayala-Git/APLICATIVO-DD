@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -37,6 +38,11 @@ public class ClientController {
     @GetMapping
     public List<ClientDTO> findAll() {
         return clientService.findAll();
+    }
+
+    @GetMapping("/next-code")
+    public Map<String, String> nextCode() {
+        return Map.of("nextCode", clientService.nextCode());
     }
 
     @GetMapping("/{id}")

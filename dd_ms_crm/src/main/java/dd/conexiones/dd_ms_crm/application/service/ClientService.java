@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface ClientService {
     List<ClientDTO> findAll();
     ClientDTO findById(UUID id);
+    String nextCode();
     ClientDTO create(CreateClientRequest request);
     ClientDTO update(UUID id, UpdateClientRequest request);
     ClientDTO updateStatus(UUID id, UpdateClientStatusRequest request);

@@ -9,6 +9,6 @@ public class PlanMapper {
 
     public PlanDTO toDto(Plan plan) {
         return new PlanDTO(plan.getId(), plan.getName(), plan.getDownMbps(), plan.getUpMbps(),
-                plan.getTechnology(), plan.getPrice(), plan.getCreatedAt());
+                plan.getTechnology(), plan.getPrice(), plan.isEnabled(), plan.getCreatedAt());
     }
 }

@@ -10,6 +10,7 @@ public class WorkOrderMapper {
     public WorkOrderDTO toDto(WorkOrder workOrder) {
         return new WorkOrderDTO(workOrder.getId(), workOrder.getClientId(), workOrder.getTicketId(),
                 workOrder.getType(), workOrder.getTechnicianId(), workOrder.getScheduledAt(),
-                workOrder.getAddress(), workOrder.getStatus(), workOrder.getCreatedAt());
+                workOrder.getAddress(), workOrder.getStatus(), workOrder.getStartedAt(),
+                workOrder.getFinishedAt(), workOrder.getCreatedAt());
     }
 }

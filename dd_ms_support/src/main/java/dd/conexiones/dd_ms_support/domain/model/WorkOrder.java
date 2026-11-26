@@ -58,6 +58,12 @@ public class WorkOrder {
     @Column(nullable = false, length = 20)
     private WorkOrderStatus status = WorkOrderStatus.SCHEDULED;
 
+    @Column(name = "started_at")
+    private OffsetDateTime startedAt;
+
+    @Column(name = "finished_at")
+    private OffsetDateTime finishedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

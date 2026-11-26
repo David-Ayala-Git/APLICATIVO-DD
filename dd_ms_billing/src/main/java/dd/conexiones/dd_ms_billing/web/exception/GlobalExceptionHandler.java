@@ -1,5 +1,6 @@
 package dd.conexiones.dd_ms_billing.web.exception;
 
+import dd.conexiones.dd_ms_billing.domain.exception.ClosedPeriodException;
 import dd.conexiones.dd_ms_billing.domain.exception.InvalidPaymentException;
 import dd.conexiones.dd_ms_billing.domain.exception.InvalidWebhookSignatureException;
 import dd.conexiones.dd_ms_billing.domain.exception.InvoiceAlreadyPaidException;
@@ -27,8 +28,8 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(InvoiceAlreadyPaidException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(InvoiceAlreadyPaidException ex, HttpServletRequest request) {
+    @ExceptionHandler({InvoiceAlreadyPaidException.class, ClosedPeriodException.class})
+    public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 

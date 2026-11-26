@@ -7,11 +7,13 @@ import dd.conexiones.dd_ms_network.domain.exception.EquipmentNotFoundException;
 import dd.conexiones.dd_ms_network.domain.model.Equipment;
 import dd.conexiones.dd_ms_network.domain.model.enums.EquipmentStatus;
 import dd.conexiones.dd_ms_network.domain.repository.EquipmentRepository;
+import dd.conexiones.mscommon.audit.Audited;
 import dd.conexiones.mscommon.tenant.TenantContext;
 import dd.conexiones.mscommon.tenant.TenantFilterEnabler;
 import dd.conexiones.dd_ms_network.web.dto.AssignEquipmentRequest;
 import dd.conexiones.dd_ms_network.web.dto.CreateEquipmentRequest;
 import dd.conexiones.dd_ms_network.web.dto.EquipmentDTO;
+import dd.conexiones.dd_ms_network.web.dto.UpdateEquipmentRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
@@ -72,14 +74,51 @@ public class EquipmentServiceImpl implements EquipmentService {
     }
 
     @Override
+    @Audited("equipment.update")
+    public EquipmentDTO update(UUID id, UpdateEquipmentRequest request) {
+        String tenantId = TenantContext.require();
+        Equipment equipment = findOwnEquipment(id);
+        equipmentValidator.validateSerialAvailableForUpdate(tenantId, request.serialNumber(), id);
+
+        equipment.setType(request.type());
+        equipment.setBrand(request.brand());
+        equipment.setModel(request.model());
+        equipment.setSerialNumber(request.serialNumber());
+        if (request.status() != null) {
+            equipment.setStatus(request.status());
+            if (request.status() != EquipmentStatus.ASSIGNED) {
+                equipment.setAssignedClientId(null);
+            }
+        }
+        if (request.assignedClientId() != null) {
+            equipment.setAssignedClientId(request.assignedClientId());
+            if (request.status() == null) {
+                equipment.setStatus(EquipmentStatus.ASSIGNED);
+            }
+        }
+        return equipmentMapper.toDto(equipmentRepository.save(equipment));
+    }
+
+    @Override
+    @Audited("equipment.delete")
+    public void delete(UUID id) {
+        equipmentRepository.delete(findOwnEquipment(id));
+    }
+
+    @Override
     public EquipmentDTO assign(UUID id, AssignEquipmentRequest request) {
-        tenantFilterEnabler.enable(entityManager);
-        Equipment equipment = equipmentRepository.findById(id)
-                .orElseThrow(() -> new EquipmentNotFoundException(id.toString()));
+        Equipment equipment = findOwnEquipment(id);
 
         equipment.setAssignedClientId(request.clientId());
         equipment.setStatus(EquipmentStatus.ASSIGNED);
 
         return equipmentMapper.toDto(equipmentRepository.save(equipment));
+    }
+
+    private Equipment findOwnEquipment(UUID id) {
+        String tenantId = TenantContext.require();
+        return equipmentRepository.findById(id)
+                .filter(e -> e.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new EquipmentNotFoundException(id.toString()));
     }
 }

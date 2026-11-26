@@ -2,7 +2,10 @@ package dd.conexiones.dd_ms_crm.web.exception;
 
 import dd.conexiones.dd_ms_crm.domain.exception.ClientNotFoundException;
 import dd.conexiones.dd_ms_crm.domain.exception.ContractNotFoundException;
+import dd.conexiones.dd_ms_crm.domain.exception.DuplicateClientCodeException;
 import dd.conexiones.dd_ms_crm.domain.exception.DuplicateClientDocumentException;
+import dd.conexiones.dd_ms_crm.domain.exception.InvalidClientCodeException;
+import dd.conexiones.dd_ms_crm.domain.exception.PlanInUseException;
 import dd.conexiones.dd_ms_crm.domain.exception.PlanNotFoundException;
 import dd.conexiones.dd_ms_crm.web.dto.ErrorResponse;
 import dd.conexiones.mscommon.module.ModuleDisabledException;
@@ -24,13 +27,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateClientDocumentException.class)
+    @ExceptionHandler({DuplicateClientDocumentException.class, DuplicateClientCodeException.class, PlanInUseException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(MissingTenantException.class)
-    public ResponseEntity<ErrorResponse> handleMissingTenant(MissingTenantException ex, HttpServletRequest request) {
+    @ExceptionHandler({MissingTenantException.class, InvalidClientCodeException.class})
+    public ResponseEntity<ErrorResponse> handleMissingTenant(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 

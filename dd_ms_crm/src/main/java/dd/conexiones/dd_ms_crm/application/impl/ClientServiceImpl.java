@@ -63,12 +63,20 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public String nextCode() {
+        return clientValidator.nextAvailableCode(TenantContext.require());
+    }
+
+    @Override
     public ClientDTO create(CreateClientRequest request) {
         String tenantId = TenantContext.require();
         clientValidator.validateDocumentAvailable(tenantId, request.document());
+        String clientCode = clientValidator.resolveCodeForCreate(tenantId, request.clientCode());
 
         Client client = new Client();
         client.setTenantId(tenantId);
+        client.setClientCode(clientCode);
         client.setFullName(request.fullName());
         client.setDocument(request.document());
         client.setPhone(request.phone());
@@ -79,6 +87,7 @@ public class ClientServiceImpl implements ClientService {
         // n8n (flujo de onboarding): orden de instalacion + bienvenida por WhatsApp
         automationEvents.publish("client-created", Map.of(
                 "clientId", client.getId().toString(),
+                "clientCode", client.getClientCode(),
                 "fullName", client.getFullName(),
                 "phone", client.getPhone() == null ? "" : client.getPhone(),
                 "address", client.getAddress() == null ? "" : client.getAddress()));
@@ -88,8 +97,10 @@ public class ClientServiceImpl implements ClientService {
     @Override
     @Audited("client.update")
     public ClientDTO update(UUID id, UpdateClientRequest request) {
+        String tenantId = TenantContext.require();
         Client client = findOwnClient(id)
                 .orElseThrow(() -> new ClientNotFoundException(id.toString()));
+        client.setClientCode(clientValidator.resolveCodeForUpdate(tenantId, id, request.clientCode(), client.getClientCode()));
         client.setFullName(request.fullName());
         client.setPhone(request.phone());
         client.setAddress(request.address());

@@ -3,14 +3,17 @@ package dd.conexiones.dd_ms_billing.web.controller;
 import dd.conexiones.dd_ms_billing.application.service.PaymentService;
 import dd.conexiones.dd_ms_billing.web.dto.ManualPaymentRequest;
 import dd.conexiones.dd_ms_billing.web.dto.PaymentDTO;
+import dd.conexiones.dd_ms_billing.web.dto.UpdatePaymentRequest;
 import dd.conexiones.mscommon.module.RequiresModule;
 import dd.conexiones.mscommon.role.RequiresRole;
 import dd.conexiones.mscommon.role.Roles;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +55,21 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentDTO registerManual(@Valid @RequestBody ManualPaymentRequest request) {
         return paymentService.registerManual(request);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.CARTERA})
+    @RequiresModule("billing")
+    @PutMapping("/{id}")
+    public PaymentDTO update(@PathVariable UUID id, @Valid @RequestBody UpdatePaymentRequest request) {
+        return paymentService.update(id, request);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.CARTERA})
+    @RequiresModule("billing")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        paymentService.delete(id);
     }
 
     /**

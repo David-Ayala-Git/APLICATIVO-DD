@@ -12,6 +12,8 @@ public interface TicketService {
     TicketDTO findById(UUID id);
     TicketDTO create(CreateTicketRequest request);
     TicketDTO assign(UUID id, AssignTicketRequest request);
+    TicketDTO start(UUID id);
+    TicketDTO finish(UUID id);
     TicketDTO resolve(UUID id);
     TicketDTO close(UUID id);
 }

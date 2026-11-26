@@ -34,6 +34,9 @@ public class Client {
     @Column(name = "tenant_id", nullable = false, length = 64)
     private String tenantId;
 
+    @Column(name = "client_code", nullable = false, length = 16)
+    private String clientCode;
+
     @Column(name = "full_name", nullable = false, length = 200)
     private String fullName;
 

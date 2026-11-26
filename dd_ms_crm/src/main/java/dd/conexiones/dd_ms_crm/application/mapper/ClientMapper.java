@@ -8,8 +8,9 @@ import org.springframework.stereotype.Component;
 public class ClientMapper {
 
     public ClientDTO toDto(Client client) {
-        return new ClientDTO(client.getId(), client.getFullName(), client.getDocument(), client.getPhone(),
-                client.getAddress(), client.getPlanId(), client.getStatus(), client.getIpAddress(),
-                client.getOnuSerial(), client.getRouterId(), client.getPppoeUser(), client.getCreatedAt());
+        return new ClientDTO(client.getId(), client.getClientCode(), client.getFullName(), client.getDocument(),
+                client.getPhone(), client.getAddress(), client.getPlanId(), client.getStatus(),
+                client.getIpAddress(), client.getOnuSerial(), client.getRouterId(), client.getPppoeUser(),
+                client.getCreatedAt());
     }
 }

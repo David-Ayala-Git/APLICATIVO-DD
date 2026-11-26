@@ -14,6 +14,8 @@ public record TicketDTO(
         TicketStatus status,
         UUID assignedTo,
         OffsetDateTime slaDueAt,
+        OffsetDateTime startedAt,
+        OffsetDateTime finishedAt,
         OffsetDateTime createdAt
 ) {
 }

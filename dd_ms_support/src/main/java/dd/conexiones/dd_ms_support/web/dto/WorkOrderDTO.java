@@ -15,6 +15,8 @@ public record WorkOrderDTO(
         OffsetDateTime scheduledAt,
         String address,
         WorkOrderStatus status,
+        OffsetDateTime startedAt,
+        OffsetDateTime finishedAt,
         OffsetDateTime createdAt
 ) {
 }

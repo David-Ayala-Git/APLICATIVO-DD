@@ -55,6 +55,12 @@ public class Ticket {
     @Column(name = "sla_due_at", nullable = false)
     private OffsetDateTime slaDueAt;
 
+    @Column(name = "started_at")
+    private OffsetDateTime startedAt;
+
+    @Column(name = "finished_at")
+    private OffsetDateTime finishedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

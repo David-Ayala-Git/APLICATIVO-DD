@@ -17,6 +17,7 @@ import dd.conexiones.dd_ms_billing.domain.repository.InvoiceRepository;
 import dd.conexiones.dd_ms_billing.domain.repository.PaymentRepository;
 import dd.conexiones.dd_ms_billing.web.dto.ManualPaymentRequest;
 import dd.conexiones.dd_ms_billing.web.dto.PaymentDTO;
+import dd.conexiones.dd_ms_billing.web.dto.UpdatePaymentRequest;
 import dd.conexiones.mscommon.audit.Audited;
 import dd.conexiones.mscommon.automation.AutomationEvents;
 import dd.conexiones.mscommon.tenant.TenantContext;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.EnumSet;
 import java.util.List;
@@ -95,6 +97,70 @@ public class PaymentServiceImpl implements PaymentService {
                 .filter(found -> found.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new InvoiceNotFoundException(request.invoiceId().toString()));
         return record(invoice, request.amount(), request.method(), request.externalReference(), true);
+    }
+
+    @Override
+    @Audited("payment.update")
+    public PaymentDTO update(UUID id, UpdatePaymentRequest request) {
+        String tenantId = TenantContext.require();
+        Payment payment = paymentRepository.findById(id)
+                .filter(p -> p.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new PaymentNotFoundException(id.toString()));
+
+        if (paymentRepository.existsByTenantIdAndMethodAndExternalReferenceAndIdNot(
+                tenantId, request.method(), request.externalReference(), id)) {
+            throw new InvalidPaymentException("Ya existe otro pago con esa misma referencia y metodo.");
+        }
+
+        payment.setAmount(request.amount());
+        payment.setMethod(request.method());
+        payment.setExternalReference(request.externalReference());
+        payment.setStatus(request.status());
+        if (request.status() == PaymentStatus.CONFIRMED) {
+            if (payment.getPaidAt() == null) {
+                payment.setPaidAt(OffsetDateTime.now());
+            }
+        } else {
+            payment.setPaidAt(null);
+        }
+        payment = paymentRepository.save(payment);
+
+        Invoice invoice = invoiceRepository.findById(payment.getInvoiceId())
+                .filter(inv -> inv.getTenantId().equals(tenantId))
+                .orElse(null);
+        if (invoice != null) {
+            syncInvoiceStatus(invoice, payment.getId(), request.status() == PaymentStatus.CONFIRMED);
+        }
+        return paymentMapper.toDto(payment);
+    }
+
+    @Override
+    @Audited("payment.delete")
+    public void delete(UUID id) {
+        String tenantId = TenantContext.require();
+        Payment payment = paymentRepository.findById(id)
+                .filter(p -> p.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new PaymentNotFoundException(id.toString()));
+        UUID invoiceId = payment.getInvoiceId();
+        paymentRepository.delete(payment);
+
+        invoiceRepository.findById(invoiceId)
+                .filter(inv -> inv.getTenantId().equals(tenantId))
+                .ifPresent(invoice -> syncInvoiceStatus(invoice, id, false));
+    }
+
+    private void syncInvoiceStatus(Invoice invoice, UUID changedPaymentId, boolean changedIsConfirmed) {
+        boolean hasConfirmed = changedIsConfirmed
+                || paymentRepository.existsByInvoiceIdAndStatusAndIdNot(
+                invoice.getId(), PaymentStatus.CONFIRMED, changedPaymentId);
+        if (hasConfirmed) {
+            invoice.setStatus(InvoiceStatus.PAID);
+        } else if (invoice.getStatus() == InvoiceStatus.PAID) {
+            invoice.setStatus(invoice.getDueDate().isBefore(LocalDate.now())
+                    ? InvoiceStatus.OVERDUE
+                    : InvoiceStatus.PENDING);
+        }
+        invoiceRepository.save(invoice);
     }
 
     @Override

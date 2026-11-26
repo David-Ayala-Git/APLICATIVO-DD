@@ -4,6 +4,7 @@ import dd.conexiones.dd_ms_support.application.mapper.TicketMapper;
 import dd.conexiones.dd_ms_support.application.service.TicketService;
 import dd.conexiones.dd_ms_support.application.validation.SlaCalculator;
 import dd.conexiones.dd_ms_support.application.validation.TechnicianValidator;
+import dd.conexiones.dd_ms_support.domain.exception.InvalidSupportStateException;
 import dd.conexiones.dd_ms_support.domain.exception.TicketNotFoundException;
 import dd.conexiones.dd_ms_support.domain.model.Ticket;
 import dd.conexiones.dd_ms_support.domain.model.enums.TicketStatus;
@@ -18,6 +19,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -83,8 +85,38 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    public TicketDTO start(UUID id) {
+        Ticket ticket = getTicketOrThrow(id);
+        if (ticket.getStatus() != TicketStatus.IN_PROGRESS) {
+            throw new InvalidSupportStateException("Solo se puede iniciar un ticket que este en proceso.");
+        }
+        if (ticket.getStartedAt() == null) {
+            ticket.setStartedAt(OffsetDateTime.now());
+        }
+        return ticketMapper.toDto(ticketRepository.saveAndFlush(ticket));
+    }
+
+    @Override
+    public TicketDTO finish(UUID id) {
+        Ticket ticket = getTicketOrThrow(id);
+        if (ticket.getStatus() != TicketStatus.IN_PROGRESS) {
+            throw new InvalidSupportStateException("Solo se puede terminar un ticket que este en proceso.");
+        }
+        if (ticket.getStartedAt() == null) {
+            throw new InvalidSupportStateException("Debes iniciar el ticket antes de terminarlo.");
+        }
+        if (ticket.getFinishedAt() == null) {
+            ticket.setFinishedAt(OffsetDateTime.now());
+        }
+        return ticketMapper.toDto(ticketRepository.saveAndFlush(ticket));
+    }
+
+    @Override
     public TicketDTO resolve(UUID id) {
         Ticket ticket = getTicketOrThrow(id);
+        if (ticket.getStatus() == TicketStatus.IN_PROGRESS && ticket.getFinishedAt() == null) {
+            throw new InvalidSupportStateException("Primero debes iniciar y terminar el ticket para marcarlo como resuelto.");
+        }
         ticket.setStatus(TicketStatus.RESOLVED);
         return ticketMapper.toDto(ticketRepository.save(ticket));
     }
@@ -97,7 +129,9 @@ public class TicketServiceImpl implements TicketService {
     }
 
     private Ticket getTicketOrThrow(UUID id) {
-        tenantFilterEnabler.enable(entityManager);
-        return ticketRepository.findById(id).orElseThrow(() -> new TicketNotFoundException(id.toString()));
+        String tenantId = TenantContext.require();
+        return ticketRepository.findById(id)
+                .filter(t -> t.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new TicketNotFoundException(id.toString()));
     }
 }

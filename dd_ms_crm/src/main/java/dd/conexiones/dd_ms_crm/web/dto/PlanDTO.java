@@ -13,6 +13,7 @@ public record PlanDTO(
         Integer upMbps,
         Technology technology,
         BigDecimal price,
+        boolean enabled,
         OffsetDateTime createdAt
 ) {
 }
