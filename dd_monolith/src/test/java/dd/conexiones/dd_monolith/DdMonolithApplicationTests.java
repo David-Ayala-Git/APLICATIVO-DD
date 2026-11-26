@@ -38,6 +38,15 @@ class DdMonolithApplicationTests {
     }
 
     @Test
+    void lightweightHealthEndpointIsPublicAndReturnsSimpleJson() throws Exception {
+        mockMvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"))
+                .andExpect(jsonPath("$.message").value("Backend is running"))
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
     void protectedEndpointRejectsWithoutJwt() throws Exception {
         mockMvc.perform(get("/api/crm/clients"))
                 .andExpect(status().isUnauthorized())

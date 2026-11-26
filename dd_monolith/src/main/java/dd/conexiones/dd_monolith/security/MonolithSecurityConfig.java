@@ -60,6 +60,7 @@ public class MonolithSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
+                                "/health",
                                 "/api/auth/login",
                                 "/actuator/**",
                                 "/api/whatsapp/webhook/**",

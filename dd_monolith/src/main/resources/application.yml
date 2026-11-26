@@ -52,3 +52,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+keep-alive:
+  enabled: ${KEEP_ALIVE_ENABLED:false}
+  url: ${KEEP_ALIVE_URL:}
+  interval-ms: ${KEEP_ALIVE_INTERVAL:720000}
+  timeout-ms: ${KEEP_ALIVE_TIMEOUT:15000}

@@ -48,6 +48,10 @@ public class MonolithJwtFilter extends OncePerRequestFilter {
             "/api/payments/webhook"
     );
 
+    private static final Set<String> PUBLIC_EXACT_PATHS = Set.of(
+            "/health"
+    );
+
     private static final Set<String> PROTECTED_HEADERS = Set.of(
             TenantFilter.TENANT_HEADER.toLowerCase(Locale.ROOT),
             TenantFilter.USER_ID_HEADER.toLowerCase(Locale.ROOT),
@@ -130,7 +134,8 @@ public class MonolithJwtFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublic(String path) {
-        return PUBLIC_PATH_PREFIXES.stream().anyMatch(path::startsWith);
+        return PUBLIC_EXACT_PATHS.contains(path)
+                || PUBLIC_PATH_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     private boolean constantTimeEquals(String a, String b) {

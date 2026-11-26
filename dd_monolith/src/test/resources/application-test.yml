@@ -27,3 +27,6 @@ network:
 
 cors:
   allowed-origins: https://*.vercel.app,http://localhost:4200
+
+keep-alive:
+  enabled: false

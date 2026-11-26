@@ -21,3 +21,9 @@ spring:
               - uri: http://localhost:${PORT:10000}
             "[dd-ms-reports]":
               - uri: http://localhost:${PORT:10000}
+
+keep-alive:
+  enabled: ${KEEP_ALIVE_ENABLED:true}
+  url: ${KEEP_ALIVE_URL:https://aplicativo-dd.onrender.com/health}
+  interval-ms: ${KEEP_ALIVE_INTERVAL:720000}
+  timeout-ms: ${KEEP_ALIVE_TIMEOUT:15000}

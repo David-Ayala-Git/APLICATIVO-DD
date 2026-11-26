@@ -55,3 +55,10 @@ services:
         sync: false
       - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
         sync: false
+      # Keep-Alive para reducir suspension por inactividad en Render (12 min = 720000 ms)
+      - key: KEEP_ALIVE_ENABLED
+        value: "true"
+      - key: KEEP_ALIVE_URL
+        value: https://aplicativo-dd.onrender.com/health
+      - key: KEEP_ALIVE_INTERVAL
+        value: "720000"
