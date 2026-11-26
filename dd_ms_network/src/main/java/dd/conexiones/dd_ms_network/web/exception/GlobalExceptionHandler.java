@@ -2,7 +2,9 @@ package dd.conexiones.dd_ms_network.web.exception;
 
 import dd.conexiones.dd_ms_network.domain.exception.DuplicateSerialException;
 import dd.conexiones.dd_ms_network.domain.exception.EquipmentNotFoundException;
+import dd.conexiones.dd_ms_network.domain.exception.InvalidNapConfigurationException;
 import dd.conexiones.dd_ms_network.domain.exception.InvalidRouterOsIdException;
+import dd.conexiones.dd_ms_network.domain.exception.NapCapacityException;
 import dd.conexiones.dd_ms_network.domain.exception.NodeNotFoundException;
 import dd.conexiones.dd_ms_network.domain.exception.OnuNotFoundException;
 import dd.conexiones.dd_ms_network.domain.exception.RouterConnectionException;
@@ -28,13 +30,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateSerialException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(DuplicateSerialException ex, HttpServletRequest request) {
+    @ExceptionHandler({DuplicateSerialException.class, NapCapacityException.class})
+    public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(InvalidRouterOsIdException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidRouterOsId(InvalidRouterOsIdException ex, HttpServletRequest request) {
+    @ExceptionHandler({InvalidRouterOsIdException.class, InvalidNapConfigurationException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidRequest(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 

@@ -8,6 +8,7 @@ public record CreateNodeRequest(
         @NotBlank String name,
         @NotNull NodeType type,
         @NotNull Double latitude,
-        @NotNull Double longitude
+        @NotNull Double longitude,
+        Integer napCapacity
 ) {
 }

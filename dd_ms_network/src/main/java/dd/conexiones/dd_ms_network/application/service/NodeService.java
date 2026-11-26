@@ -1,5 +1,6 @@
 package dd.conexiones.dd_ms_network.application.service;
 
+import dd.conexiones.dd_ms_network.web.dto.AssignNapClientRequest;
 import dd.conexiones.dd_ms_network.web.dto.CreateNodeRequest;
 import dd.conexiones.dd_ms_network.web.dto.NodeDTO;
 import dd.conexiones.dd_ms_network.web.dto.UpdateNodeRequest;
@@ -13,4 +14,6 @@ public interface NodeService {
     NodeDTO create(CreateNodeRequest request);
     NodeDTO update(UUID id, UpdateNodeRequest request);
     void delete(UUID id);
+    NodeDTO assignClient(UUID nodeId, AssignNapClientRequest request);
+    NodeDTO unassignClient(UUID nodeId, UUID assignmentId);
 }

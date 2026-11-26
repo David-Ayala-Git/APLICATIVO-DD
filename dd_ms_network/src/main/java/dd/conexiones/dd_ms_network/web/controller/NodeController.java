@@ -1,6 +1,7 @@
 package dd.conexiones.dd_ms_network.web.controller;
 
 import dd.conexiones.dd_ms_network.application.service.NodeService;
+import dd.conexiones.dd_ms_network.web.dto.AssignNapClientRequest;
 import dd.conexiones.dd_ms_network.web.dto.CreateNodeRequest;
 import dd.conexiones.dd_ms_network.web.dto.NodeDTO;
 import dd.conexiones.dd_ms_network.web.dto.UpdateNodeRequest;
@@ -62,5 +63,17 @@ public class NodeController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id) {
         nodeService.delete(id);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.OPERADOR, Roles.TECNICO})
+    @PostMapping("/{id}/assign")
+    public NodeDTO assignClient(@PathVariable UUID id, @Valid @RequestBody AssignNapClientRequest request) {
+        return nodeService.assignClient(id, request);
+    }
+
+    @RequiresRole({Roles.ADMIN_ISP, Roles.OPERADOR, Roles.TECNICO})
+    @DeleteMapping("/{id}/assignments/{assignmentId}")
+    public NodeDTO unassignClient(@PathVariable UUID id, @PathVariable UUID assignmentId) {
+        return nodeService.unassignClient(id, assignmentId);
     }
 }

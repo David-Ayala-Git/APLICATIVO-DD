@@ -52,6 +52,10 @@ public class Node {
     @Column(nullable = false, length = 20)
     private NodeStatus status = NodeStatus.ACTIVE;
 
+    /** Capacidad de puertos para nodos tipo NAP: 8 (1x8) o 16 (1x16); null en otros tipos. */
+    @Column(name = "nap_capacity")
+    private Integer napCapacity;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

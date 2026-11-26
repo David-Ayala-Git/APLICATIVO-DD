@@ -10,6 +10,7 @@ public record UpdateNodeRequest(
         @NotNull NodeType type,
         @NotNull Double latitude,
         @NotNull Double longitude,
-        NodeStatus status
+        NodeStatus status,
+        Integer napCapacity
 ) {
 }
